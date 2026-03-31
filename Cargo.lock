@@ -32,7 +32,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "taskbar-mini-player"
+name = "taskbarminiplayer"
 version = "0.1.0"
 dependencies = [
  "windows",
