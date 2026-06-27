@@ -1,0 +1,119 @@
+<Window x:Class="TaskbarMiniPlayer.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="TaskbarMiniPlayer" 
+        Height="48" Width="350"
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        Topmost="True" ShowInTaskbar="False" ResizeMode="NoResize"
+        Loaded="Window_Loaded" Closed="Window_Closed">
+    <Window.Resources>
+        <Style x:Key="MediaButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontFamily" Value="Segoe MDL2 Assets"/>
+            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bg" Background="{TemplateBinding Background}" CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bg" Property="Background" Value="#464646"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="bg" Property="Background" Value="#696969"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+    <Grid Background="Transparent">
+        <Border x:Name="MainBorder" CornerRadius="16" Background="#59000000" BorderBrush="#30FFFFFF" BorderThickness="1" MouseEnter="MainBorder_MouseEnter" MouseLeave="MainBorder_MouseLeave" MouseLeftButtonDown="MainBorder_MouseLeftButtonDown" MouseRightButtonDown="MainBorder_MouseRightButtonDown" MouseWheel="MainBorder_MouseWheel">
+            <Grid x:Name="MainGrid">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" x:Name="ColSessionIndicator"/>
+                    <ColumnDefinition Width="Auto" x:Name="ColAlbumArt"/>
+                    <ColumnDefinition Width="*" x:Name="ColMetadata"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <ItemsControl x:Name="SessionIndicator" Grid.Column="0" VerticalAlignment="Center" Margin="8,0,0,0" IsHitTestVisible="False">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Vertical"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Ellipse Width="4" Height="4" Margin="0,2" Fill="{Binding}"/>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                
+                <Image x:Name="ImgAlbumArt" Grid.Column="1" Width="32" Height="32" Margin="8,4,4,4" Stretch="UniformToFill">
+                    <Image.Clip>
+                        <RectangleGeometry Rect="0,0,32,32" RadiusX="4" RadiusY="4"/>
+                    </Image.Clip>
+                </Image>
+                
+                <Grid x:Name="PanelMetadata" Grid.Column="2" VerticalAlignment="Center" Margin="4,0,8,0" SizeChanged="PanelMetadata_SizeChanged">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    
+                    <Grid x:Name="TitleGrid" Grid.Row="0" ClipToBounds="True" Height="18" Margin="0,0,0,0">
+                        <Canvas x:Name="TitleCanvas" HorizontalAlignment="Left" VerticalAlignment="Center" Height="18">
+                            <TextBlock x:Name="TxtTitle" Text="Title" Foreground="White" FontWeight="SemiBold" FontSize="12" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="0,2,0,0"/>
+                        </Canvas>
+                    </Grid>
+                    
+                    <Grid x:Name="ArtistGrid" Grid.Row="1" ClipToBounds="True" Height="14">
+                        <Canvas x:Name="ArtistCanvas" HorizontalAlignment="Left" VerticalAlignment="Center" Height="14">
+                            <TextBlock x:Name="TxtArtist" Text="Artist" Foreground="#AAAAAA" FontSize="10" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="0,0,0,0"/>
+                        </Canvas>
+                    </Grid>
+                </Grid>
+                
+                <StackPanel Grid.Column="3" Orientation="Horizontal" x:Name="PanelButtons" Margin="0,0,4,0">
+                    <Button x:Name="BtnPrev" Width="40" Content="&#xE892;" Style="{StaticResource MediaButtonStyle}" Click="BtnPrev_Click"/>
+                    <Button x:Name="BtnPlay" Width="40" Content="&#xE768;" FontSize="22" Style="{StaticResource MediaButtonStyle}" Click="BtnPlay_Click"/>
+                    <Button x:Name="BtnNext" Width="40" Content="&#xE893;" Style="{StaticResource MediaButtonStyle}" Click="BtnNext_Click"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Popup x:Name="VolumePopup" PlacementTarget="{Binding ElementName=MainBorder}" Placement="Top" VerticalOffset="-8" AllowsTransparency="True" StaysOpen="True" PopupAnimation="None">
+            <Grid x:Name="VolumePopupGrid" Width="350" Height="48" Margin="0,0,0,0" Opacity="0" MouseEnter="VolumePopup_MouseEnter" MouseLeave="VolumePopup_MouseLeave">
+                <Grid.RenderTransform>
+                    <TranslateTransform x:Name="VolumePopupTranslate" Y="20"/>
+                </Grid.RenderTransform>
+                <Border x:Name="VolumeBorder" CornerRadius="16" Background="#66000000" BorderBrush="#20FFFFFF" BorderThickness="1">
+                    <Grid x:Name="VolumeTrack" MouseDown="VolumeTrack_MouseDown" MouseMove="VolumeTrack_MouseMove" MouseUp="VolumeTrack_MouseUp" Background="Transparent" Cursor="Hand">
+                        <!-- Progress Fill -->
+                        <Border x:Name="VolumeFill" HorizontalAlignment="Left" CornerRadius="16,0,0,16" Width="0" IsHitTestVisible="False">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                    <GradientStop Color="#80FFFFFF" Offset="0"/>
+                                    <GradientStop Color="#40FFFFFF" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Border.Background>
+                        </Border>
+                        
+                        <!-- Speaker Icon -->
+                        <TextBlock x:Name="VolumeIcon" Text="&#xE767;" FontFamily="Segoe MDL2 Assets" FontSize="20" Foreground="#E0E0E0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="16,0,0,0" IsHitTestVisible="False">
+                            <TextBlock.Effect>
+                                <DropShadowEffect Color="Black" BlurRadius="6" ShadowDepth="1" Opacity="0.4"/>
+                            </TextBlock.Effect>
+                        </TextBlock>
+                    </Grid>
+                </Border>
+            </Grid>
+        </Popup>
+    </Grid>
+</Window>
