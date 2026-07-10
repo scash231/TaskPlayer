@@ -4,108 +4,71 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TaskbarMiniPlayer</title>
-    <meta name="description" content="A lightweight media controller that sits in the Windows taskbar.">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="wrapper">
+    <div class="container">
         <header>
-            <span class="logo">TaskbarMiniPlayer</span>
-            <nav>
-                <a href="https://github.com" target="_blank" rel="noopener">GitHub</a>
-            </nav>
+            <h1>TaskbarMiniPlayer</h1>
+            <p>Windows taskbar media controller</p>
         </header>
 
-        <main>
-            <section class="hero">
-                <p class="subtitle">Windows Utility</p>
-                <h1>Media controls on your taskbar.</h1>
-                <p class="desc">A lightweight Windows application that integrates with System Media Transport Controls (SMTC) to display and manage active playback directly from the taskbar.</p>
-                <div>
-                    <a href="https://github.com" class="btn">Download Latest Release</a>
-                </div>
-            </section>
+        <section class="intro">
+            <p>TaskbarMiniPlayer is a lightweight Windows utility that displays and controls active media playback directly from the taskbar. It integrates with Windows System Media Transport Controls (SMTC) to support Spotify, web browsers, and other media players.</p>
+        </section>
 
-            <section>
-                <h2>Interface</h2>
-                <div class="grid">
-                    <div class="grid-item">
-                        <div class="img-wrapper">
-                            <img src="https://github.com/user-attachments/assets/d5ae7289-28eb-47fd-8a53-0eb13c077cf2" alt="Expanded player layout">
-                        </div>
-                        <p class="caption">Expanded Layout</p>
-                    </div>
-                    <div class="grid-item">
-                        <div class="img-wrapper">
-                            <img src="https://github.com/user-attachments/assets/81ed5b8d-3e2d-4809-8bfd-d02f590a3633" alt="Standard player layout">
-                        </div>
-                        <p class="caption">Standard Layout</p>
-                    </div>
-                    <div class="grid-item">
-                        <div class="img-wrapper">
-                            <img src="https://github.com/user-attachments/assets/73b2ccee-2206-4650-9793-f703ea4507db" alt="Volume slider popup">
-                        </div>
-                        <p class="caption">Volume Popup</p>
-                    </div>
-                    <div class="grid-item">
-                        <div class="img-wrapper">
-                            <img src="https://github.com/user-attachments/assets/8d82a08e-8454-43b4-8ef8-7b273e0d227d" alt="Settings configuration window">
-                        </div>
-                        <p class="caption">Settings Window</p>
-                    </div>
-                </div>
-            </section>
+        <section class="downloads">
+            <a href="https://github.com/scash231/TaskPlayer/releases" class="download-link">Download Latest Release</a>
+            <span class="meta">&bull; Windows 10 / 11</span>
+        </section>
 
-            <section>
-                <h2>Features</h2>
-                <ul class="feature-list">
-                    <li>
-                        <strong>System Integration</strong>
-                        <span>Hooks into active media playback using Windows SMTC to control apps like Spotify, web browsers, and media players.</span>
-                    </li>
-                    <li>
-                        <strong>Configuration Profiles</strong>
-                        <span>Save multiple layouts, position offsets, and startup preferences into configuration profiles.</span>
-                    </li>
-                    <li>
-                        <strong>Volume Control</strong>
-                        <span>Adjust volume instantly via a hover-activated popup.</span>
-                    </li>
-                    <li>
-                        <strong>Auto-Hide</strong>
-                        <span>Optionally hide control elements automatically when playback is stopped or after a configurable delay.</span>
-                    </li>
-                    <li>
-                        <strong>Lightweight & Native</strong>
-                        <span>Written in C# WPF for low footprint and hardware-accelerated rendering on Windows 10 and 11.</span>
-                    </li>
-                </ul>
-            </section>
+        <section class="features">
+            <h2>Features</h2>
+            <ul>
+                <li>Media control buttons (previous, play/pause, next) embedded in the taskbar.</li>
+                <li>Automatic tracking of active media players via Windows SMTC.</li>
+                <li>Volume control popup visible on hover.</li>
+                <li>Custom configuration profiles to save layouts, offsets, and options.</li>
+                <li>Optional auto-hide delay when playback is idle.</li>
+                <li>Low resource usage, built natively with C# and WPF.</li>
+            </ul>
+        </section>
 
-            <section>
-                <h2>Setup</h2>
-                <div class="steps">
-                    <div class="step">
-                        <h3>1. Download</h3>
-                        <p>Get the latest zip file from the releases page.</p>
-                    </div>
-                    <div class="step">
-                        <h3>2. Extract</h3>
-                        <p>Extract the files to your directory of choice.</p>
-                    </div>
-                    <div class="step">
-                        <h3>3. Run</h3>
-                        <p>Run <code>TaskbarMiniPlayer.exe</code>. Right-click the interface to customize settings.</p>
-                    </div>
+        <section class="screenshots">
+            <h2>Screenshots</h2>
+            <div class="screenshot-grid">
+                <div class="screenshot-item">
+                    <img src="https://github.com/user-attachments/assets/d5ae7289-28eb-47fd-8a53-0eb13c077cf2" alt="Expanded layout screenshot">
+                    <span>Expanded Layout</span>
                 </div>
-            </section>
-        </main>
+                <div class="screenshot-item">
+                    <img src="https://github.com/user-attachments/assets/81ed5b8d-3e2d-4809-8bfd-d02f590a3633" alt="Standard layout screenshot">
+                    <span>Standard Layout</span>
+                </div>
+                <div class="screenshot-item">
+                    <img src="https://github.com/user-attachments/assets/73b2ccee-2206-4650-9793-f703ea4507db" alt="Volume popup screenshot">
+                    <span>Volume Popup</span>
+                </div>
+                <div class="screenshot-item">
+                    <img src="https://github.com/user-attachments/assets/8d82a08e-8454-43b4-8ef8-7b273e0d227d" alt="Settings configuration screenshot">
+                    <span>Settings Window</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="setup">
+            <h2>Installation</h2>
+            <ol>
+                <li>Download the latest release archive.</li>
+                <li>Extract the files to a folder on your computer.</li>
+                <li>Run <code>TaskbarMiniPlayer.exe</code>. Right-click the interface to configure settings.</li>
+            </ol>
+        </section>
 
         <footer>
-            <p>MIT License &bull; TaskbarMiniPlayer</p>
+            <a href="https://github.com/scash231/TaskPlayer" target="_blank" rel="noopener">GitHub Project</a>
+            <span>&bull;</span>
+            <span>MIT License</span>
         </footer>
     </div>
 </body>
