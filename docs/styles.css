@@ -76,6 +76,7 @@ a:hover {
 
 .downloads {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 16px;
 }
@@ -145,4 +146,21 @@ footer a {
 
 footer a:hover {
     color: #666;
+}
+
+/* Phone Layout Adjustments */
+body.phone .container {
+    padding: 40px 16px;
+}
+
+body.phone header {
+    margin-bottom: 24px;
+}
+
+body.phone h1 {
+    font-size: 16px;
+}
+
+body.phone section {
+    margin-bottom: 32px;
 }
