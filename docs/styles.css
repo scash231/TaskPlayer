@@ -164,3 +164,20 @@ body.phone h1 {
 body.phone section {
     margin-bottom: 32px;
 }
+
+.slim-btn {
+    background: transparent;
+    border: none;
+    color: #444;
+    font-family: monospace;
+    font-size: 11px;
+    cursor: pointer;
+    padding: 0;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.slim-btn:hover {
+    color: #666;
+}
+
