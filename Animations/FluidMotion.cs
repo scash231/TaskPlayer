@@ -56,11 +56,11 @@ public sealed class AppleSpringEase : IEasingFunction
         return 1.0 - c1 * Math.Exp(r1 * realTime) - c2 * Math.Exp(r2 * realTime);
     }
 
-    public static AppleSpringEase Interactive => new(0.72, 0.50);
-    public static AppleSpringEase Gentle      => new(0.80, 0.55);
-    public static AppleSpringEase Bouncy      => new(0.65, 0.45);
-    public static AppleSpringEase Smooth      => new(1.00, 0.40);
-    public static AppleSpringEase Snappy      => new(0.86, 0.35);
+    public static readonly AppleSpringEase Interactive = new(0.72, 0.50);
+    public static readonly AppleSpringEase Gentle      = new(0.80, 0.55);
+    public static readonly AppleSpringEase Bouncy      = new(0.65, 0.45);
+    public static readonly AppleSpringEase Smooth      = new(1.00, 0.40);
+    public static readonly AppleSpringEase Snappy      = new(0.86, 0.35);
 }
 
 public static class FluidMotion
@@ -100,7 +100,7 @@ public static class FluidMotion
     }
 
     public static void MorphOpen(
-        Border root,
+        FrameworkElement root,
         ScaleTransform scale,
         TranslateTransform translate,
         Rect origin,
@@ -159,7 +159,7 @@ public static class FluidMotion
     }
     // Window morph close (shrink back toward button, fast fade)
     public static void MorphClose(
-        Border root,
+        FrameworkElement root,
         ScaleTransform scale,
         TranslateTransform translate,
         Rect origin,
