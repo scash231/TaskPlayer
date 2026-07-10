@@ -42,21 +42,19 @@ function adjustLayout() {
     }
 }
 
-window.addEventListener('DOMContentLoaded', () => {
-    adjustLayout();
-    
-    const toggleBtn = document.getElementById('view-toggle');
-    if (toggleBtn) {
-        toggleBtn.addEventListener('click', () => {
-            const body = document.body;
-            if (body.classList.contains('phone')) {
-                manualOverride = 'desktop';
-            } else {
-                manualOverride = 'phone';
-            }
-            adjustLayout();
-        });
-    }
-});
+// Run immediately since script is at the bottom of the body
+adjustLayout();
+
+const toggleBtn = document.getElementById('view-toggle');
+if (toggleBtn) {
+    toggleBtn.addEventListener('click', () => {
+        if (document.body.classList.contains('phone')) {
+            manualOverride = 'desktop';
+        } else {
+            manualOverride = 'phone';
+        }
+        adjustLayout();
+    });
+}
 
 window.addEventListener('resize', adjustLayout);
