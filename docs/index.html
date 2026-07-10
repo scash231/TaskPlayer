@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskbarMiniPlayer - Sleek Media Controller for Windows</title>
+    <meta name="description" content="A premium, lightweight media controller for Windows that sits directly in your taskbar. Supports custom layouts, profiles, hotkeys, and expert positioning.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="#" class="logo">
+                <span class="logo-icon">⚡</span>
+                <span class="logo-text">TaskbarMiniPlayer</span>
+            </a>
+            <div class="nav-links">
+                <a href="#features">Features</a>
+                <a href="#demo">Interactive Demo</a>
+                <a href="#install">Install</a>
+                <a href="https://github.com" target="_blank" class="github-btn">GitHub</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="hero">
+        <div class="hero-bg-glows">
+            <div class="glow glow-1"></div>
+            <div class="glow glow-2"></div>
+        </div>
+        <div class="hero-container">
+            <span class="badge">Version 2.0 now available</span>
+            <h1>Media control, <br><span class="gradient-text">right in your taskbar</span></h1>
+            <p class="hero-desc">
+                A sleek, lightweight media controller for Windows that integrates seamlessly. 
+                Custom layouts, dynamic sizing, hotkeys, and savable profiles—all packed in a 
+                fluid, hardware-accelerated interface.
+            </p>
+            <div class="hero-actions">
+                <a href="#install" class="primary-btn">Download Now</a>
+                <a href="#demo" class="secondary-btn">Try Interactive Demo</a>
+            </div>
+
+            <!-- Floating Mockup Container -->
+            <div class="mockup-frame">
+                <div class="mockup-header">
+                    <span class="dot red"></span>
+                    <span class="dot yellow"></span>
+                    <span class="dot green"></span>
+                    <span class="mockup-title">Settings Window Preview</span>
+                </div>
+                <div class="mockup-body">
+                    <!-- Simple Mode Card -->
+                    <div class="mockup-card simple-card">
+                        <div class="card-header">
+                            <span class="card-title">Settings</span>
+                            <div class="card-header-right">
+                                <span class="mode-label">Expert Mode</span>
+                                <div class="switch active" id="mockup-expert-toggle"></div>
+                                <span class="close-icon">✕</span>
+                            </div>
+                        </div>
+                        <div class="mockup-profiles">
+                            <span>Profile:</span>
+                            <div class="select-box">Default</div>
+                            <div class="profile-actions">
+                                <button class="small-btn">Save</button>
+                                <button class="small-btn">Rename</button>
+                                <button class="small-btn delete">Delete</button>
+                            </div>
+                        </div>
+                        <div class="mockup-grid">
+                            <div class="mockup-col">
+                                <div class="col-title">GENERAL & PLAYBACK</div>
+                                <div class="option-row">
+                                    <div>
+                                        <div class="option-name">Launch on Startup</div>
+                                        <div class="option-desc">Automatically start with Windows</div>
+                                    </div>
+                                    <div class="switch active"></div>
+                                </div>
+                                <div class="option-row">
+                                    <div>
+                                        <div class="option-name">Keep Player Topmost</div>
+                                        <div class="option-desc">Ensure player stays visible</div>
+                                    </div>
+                                    <div class="switch"></div>
+                                </div>
+                            </div>
+                            <div class="mockup-col">
+                                <div class="col-title">LAYOUT & APPEARANCE</div>
+                                <div class="option-row">
+                                    <div class="option-name">Layout Style</div>
+                                    <div class="select-box wide">Expanded</div>
+                                </div>
+                                <div class="option-row">
+                                    <div class="option-name">App Theme</div>
+                                    <div class="select-box wide">Dark</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Expert Mode Card (slides in/out in demo) -->
+                    <div class="mockup-card expert-card" id="mockup-expert-card">
+                        <div class="expert-layout">
+                            <div class="expert-sidebar">
+                                <div class="sidebar-title">Expert Settings</div>
+                                <div class="sidebar-item active">Positioning</div>
+                                <div class="sidebar-item">Dynamic Sizing</div>
+                                <div class="sidebar-item">Scrolling</div>
+                                <div class="sidebar-item">Hotkeys</div>
+                                <div class="sidebar-item">Performance</div>
+                                <div class="sidebar-item">Advanced Style</div>
+                            </div>
+                            <div class="expert-content">
+                                <div class="col-title">SCREEN POSITION OFFSETS</div>
+                                <div class="option-row spacer">
+                                    <div>
+                                        <div class="option-name">Horizontal Offset (px)</div>
+                                        <div class="option-desc">Offset from default position</div>
+                                    </div>
+                                    <div class="slider-container">
+                                        <div class="slider-bar"><div class="slider-fill" style="width: 50%;"></div></div>
+                                        <span class="slider-val">0px</span>
+                                    </div>
+                                </div>
+                                <div class="option-row spacer">
+                                    <div>
+                                        <div class="option-name">Vertical Offset (px)</div>
+                                        <div class="option-desc">Offset from default vertical position</div>
+                                    </div>
+                                    <div class="slider-container">
+                                        <div class="slider-bar"><div class="slider-fill" style="width: 50%;"></div></div>
+                                        <span class="slider-val">0px</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <div class="container">
+            <div class="section-header">
+                <h2>Designed to feel <span class="gradient-text">native</span></h2>
+                <p>TaskbarMiniPlayer builds on modern WPF concepts to bring lightweight media overlay controls directly to your Windows desktop workflow.</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="icon-wrap">🎨</div>
+                    <h3>Dual Mode Interface</h3>
+                    <p>Access basic layouts instantly in Simple Mode, or toggle Expert Mode to reveal depth tweaks, alignments, performance sliders, and offset options.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon-wrap">💾</div>
+                    <h3>Savable Configuration Profiles</h3>
+                    <p>Create, rename, delete and transition between user profiles seamlessly. Shift between layouts, accent hues, and control speeds in one click.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon-wrap">⚡</div>
+                    <h3>Fluid Animations</h3>
+                    <p>Powered by custom math-driven spring easing functions. Controls open, morph, and shrink smoothly using native hardware pipelines.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Interactive Mockup Demo Section -->
+    <section id="demo" class="demo-section">
+        <div class="container">
+            <div class="section-header">
+                <h2>Try the <span class="gradient-text">Live Mockup</span></h2>
+                <p>Interact with the controls below to experience how the TaskbarMiniPlayer responds to hover states, layouts, and slider adjustments.</p>
+            </div>
+            
+            <div class="demo-viewport">
+                <!-- Virtual Taskbar -->
+                <div class="taskbar-wrapper">
+                    <div class="taskbar-icons-left">
+                        <span class="taskbar-icon">⊞</span>
+                        <span class="taskbar-icon">🔍</span>
+                        <span class="taskbar-icon">🗗</span>
+                        <span class="taskbar-icon">📁</span>
+                    </div>
+
+                    <!-- Virtual Taskbar Mini Player -->
+                    <div class="virtual-player expanded" id="v-player">
+                        <div class="player-content">
+                            <!-- Album Art -->
+                            <div class="album-art" id="v-album">
+                                <span class="music-note">🎵</span>
+                            </div>
+                            <!-- Track Details -->
+                            <div class="track-info" id="v-info">
+                                <div class="track-title" id="v-title">Weekend (feat. Faroon, BILLA JOE & OGT)</div>
+                                <div class="track-artist" id="v-artist">Weekend</div>
+                            </div>
+                            <!-- Control Buttons -->
+                            <div class="player-controls">
+                                <button class="ctrl-btn" id="btn-prev">⏮</button>
+                                <button class="ctrl-btn main" id="btn-play">▶</button>
+                                <button class="ctrl-btn" id="btn-next">⏭</button>
+                            </div>
+                        </div>
+                        
+                        <!-- Timeline Border -->
+                        <div class="player-border" id="v-border"></div>
+                    </div>
+
+                    <div class="taskbar-icons-right">
+                        <span class="taskbar-icon">📶</span>
+                        <span class="taskbar-icon">🔊</span>
+                        <span class="taskbar-icon-time">20:58<br><span style="font-size: 8px;">10.07.2026</span></span>
+                    </div>
+                </div>
+
+                <!-- Live Control Panel -->
+                <div class="demo-controls">
+                    <h3>Interactive Playground</h3>
+                    <div class="playground-group">
+                        <label>Player Layout Style</label>
+                        <div class="radio-group">
+                            <button class="choice active" data-layout="expanded">Expanded</button>
+                            <button class="choice" data-layout="standard">Standard</button>
+                            <button class="choice" data-layout="compact">Compact</button>
+                        </div>
+                    </div>
+                    <div class="playground-group">
+                        <label>Accent Hues</label>
+                        <div class="hue-selectors">
+                            <span class="hue blue active" data-color="#0078D7"></span>
+                            <span class="hue green" data-color="#107C41"></span>
+                            <span class="hue orange" data-color="#D83B01"></span>
+                            <span class="hue red" data-color="#E81123"></span>
+                            <span class="hue purple" data-color="#8660A9"></span>
+                        </div>
+                    </div>
+                    <div class="playground-group">
+                        <label>Settings Window Toggle</label>
+                        <button class="action-btn" id="trigger-preview-toggle">Animate Settings View</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Installation & Getting Started -->
+    <section id="install" class="install-section">
+        <div class="container">
+            <div class="section-header">
+                <h2>Quick <span class="gradient-text">Setup</span></h2>
+                <p>Get TaskbarMiniPlayer up and running on your system in under 60 seconds.</p>
+            </div>
+            
+            <div class="install-steps">
+                <div class="step">
+                    <div class="step-num">1</div>
+                    <h4>Download</h4>
+                    <p>Grab the latest executable binary release from the GitHub Releases page.</p>
+                </div>
+                <div class="step">
+                    <div class="step-num">2</div>
+                    <h4>Unpack</h4>
+                    <p>Extract the archive to any directory on your computer (e.g. Program Files).</p>
+                </div>
+                <div class="step">
+                    <div class="step-num">3</div>
+                    <h4>Launch</h4>
+                    <p>Run <code>TaskbarMiniPlayer.exe</code>. Right-click the widget to configure it.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 TaskbarMiniPlayer. Open source under MIT License.</p>
+            <p>Designed with glassmorphism for Windows enthusiasts.</p>
+        </div>
+    </footer>
+
+    <!-- Script -->
+    <script src="app.js"></script>
+</body>
+</html>
