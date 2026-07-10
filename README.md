@@ -20,11 +20,11 @@ Tiny media controls that sit right on your Windows taskbar. Previous, play/pause
 - Windows 11 ✓
 - Windows 8 ??? -- and older are untested. 
 
-## ShowCase
+## Video
+
+https://github.com/user-attachments/assets/b52e881a-ad3e-461a-b56d-27ef81215199
 
 
-
-https://github.com/user-attachments/assets/acfad775-5784-4711-a08e-ca7e4d867a75
 
 
 
