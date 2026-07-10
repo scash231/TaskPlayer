@@ -6,11 +6,21 @@ namespace TaskbarMiniPlayer
 {
     public partial class App : System.Windows.Application
     {
+        private static System.Threading.Mutex? _singleInstanceMutex;
         private NotifyIcon? _notifyIcon;
         private MainWindow? _mainWindow;
 
         protected override void OnStartup(StartupEventArgs e)
         {
+            _singleInstanceMutex = new System.Threading.Mutex(true, "TaskbarMiniPlayer_SingleInstance", out bool createdNew);
+            if (!createdNew)
+            {
+                _singleInstanceMutex.Dispose();
+                _singleInstanceMutex = null;
+                Shutdown();
+                return;
+            }
+
             base.OnStartup(e);
 
             try
@@ -32,7 +42,7 @@ namespace TaskbarMiniPlayer
                 catch { }
 
                 _notifyIcon.Visible = true;
-                _notifyIcon.Text = "TaskbarMiniPlayer";
+                _notifyIcon.Text = "TaskPlayer";
 
                 var contextMenu = new ContextMenuStrip();
                 contextMenu.Items.Add("Settings...", null, (s, args) => ShowSettings());
@@ -78,6 +88,8 @@ namespace TaskbarMiniPlayer
                 _notifyIcon.Visible = false;
                 _notifyIcon.Dispose();
             }
+            _singleInstanceMutex?.ReleaseMutex();
+            _singleInstanceMutex?.Dispose();
             base.OnExit(e);
         }
     }
