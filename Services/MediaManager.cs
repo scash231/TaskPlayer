@@ -1,3 +1,4 @@
+// Tracks system media playing state and sessions.
 using System;
 using System.Threading.Tasks;
 using Windows.Media.Control;
@@ -41,7 +42,7 @@ namespace TaskbarMiniPlayer
 
         private void OnCurrentSessionChanged(GlobalSystemMediaTransportControlsSessionManager sender, CurrentSessionChangedEventArgs args)
         {
-            UpdateCurrentSession();
+            System.Windows.Application.Current.Dispatcher.Invoke(() => UpdateCurrentSession());
         }
 
         private void OnSessionsChanged(GlobalSystemMediaTransportControlsSessionManager sender, SessionsChangedEventArgs args)
@@ -55,6 +56,7 @@ namespace TaskbarMiniPlayer
             {
                 _currentSession.PlaybackInfoChanged -= OnPlaybackInfoChanged;
                 _currentSession.MediaPropertiesChanged -= OnMediaPropertiesChanged;
+                _currentSession.TimelinePropertiesChanged -= OnTimelinePropertiesChanged;
             }
 
             _allSessions = _sessionManager?.GetSessions();
@@ -90,6 +92,7 @@ namespace TaskbarMiniPlayer
             {
                 _currentSession.PlaybackInfoChanged += OnPlaybackInfoChanged;
                 _currentSession.MediaPropertiesChanged += OnMediaPropertiesChanged;
+                _currentSession.TimelinePropertiesChanged += OnTimelinePropertiesChanged;
             }
 
             RefreshState();
@@ -115,6 +118,11 @@ namespace TaskbarMiniPlayer
         private void OnMediaPropertiesChanged(GlobalSystemMediaTransportControlsSession sender, MediaPropertiesChangedEventArgs args)
         {
             _ = RefreshMediaPropertiesAsync();
+        }
+
+        private void OnTimelinePropertiesChanged(GlobalSystemMediaTransportControlsSession sender, TimelinePropertiesChangedEventArgs args)
+        {
+            MediaStateChanged?.Invoke();
         }
 
         private void RefreshState()
@@ -149,7 +157,7 @@ namespace TaskbarMiniPlayer
                         try
                         {
                             using var stream = await props.Thumbnail.OpenReadAsync();
-                            var memStream = new MemoryStream();
+                            using var memStream = new MemoryStream();
                             await stream.AsStream().CopyToAsync(memStream);
                             memStream.Position = 0;
 
@@ -206,6 +214,47 @@ namespace TaskbarMiniPlayer
             if (_currentSession != null)
             {
                 await _currentSession.TrySkipNextAsync();
+            }
+        }
+
+        public Windows.Media.Control.GlobalSystemMediaTransportControlsSessionTimelineProperties? GetTimelineProperties()
+        {
+            try
+            {
+                return _currentSession?.GetTimelineProperties();
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        public double GetTimelineProgress()
+        {
+            if (_currentSession == null) return 0;
+            try
+            {
+                var timeline = _currentSession.GetTimelineProperties();
+                if (timeline == null || timeline.EndTime.TotalMilliseconds <= 0) return 0;
+
+                var position = timeline.Position;
+                if (IsPlaying)
+                {
+                    var timeSinceUpdate = DateTimeOffset.UtcNow - timeline.LastUpdatedTime;
+                    if (timeSinceUpdate.TotalMilliseconds < 0) timeSinceUpdate = TimeSpan.Zero;
+                    var estimatedPos = position + timeSinceUpdate;
+                    if (estimatedPos > timeline.EndTime) estimatedPos = timeline.EndTime;
+                    if (estimatedPos < TimeSpan.Zero) estimatedPos = TimeSpan.Zero;
+                    return estimatedPos.TotalMilliseconds / timeline.EndTime.TotalMilliseconds;
+                }
+                else
+                {
+                    return position.TotalMilliseconds / timeline.EndTime.TotalMilliseconds;
+                }
+            }
+            catch
+            {
+                return 0;
             }
         }
     }
