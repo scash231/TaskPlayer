@@ -1,0 +1,1196 @@
+<Window x:Class="TaskbarMiniPlayer.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
+        xmlns:anim="clr-namespace:TaskbarMiniPlayer.Animations"
+        Title="Settings" Width="704" Height="454"
+        WindowStyle="None" AllowsTransparency="True"
+        Background="Transparent" ResizeMode="NoResize"
+        WindowStartupLocation="Manual">
+ 
+    <Window.Resources>
+        <SolidColorBrush x:Key="BgDeep" Color="#151515"/>
+        <SolidColorBrush x:Key="BorderSub" Color="#2A2A2A"/>
+        <SolidColorBrush x:Key="Accent" Color="#0078D7"/>
+        <SolidColorBrush x:Key="TextPrimary" Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="TextSec" Color="#AAAAAA"/>
+        
+        <SolidColorBrush x:Key="InputBg" Color="#0AFFFFFF"/>
+        <SolidColorBrush x:Key="HoverBg" Color="#15FFFFFF"/>
+        <SolidColorBrush x:Key="ActiveBg" Color="#25FFFFFF"/>
+        <SolidColorBrush x:Key="PopupBg" Color="#1A1A1A"/>
+        <SolidColorBrush x:Key="PopupBorder" Color="#303030"/>
+
+        <sys:Double x:Key="GlobalScrollBarWidth">6</sys:Double>
+        <sys:Double x:Key="GlobalScrollBarHeight">6</sys:Double>
+
+        <!-- ══════ ScrollBar Style (thin minimalist) ══════ -->
+        <Style TargetType="ScrollBar">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Width" Value="{DynamicResource GlobalScrollBarWidth}"/>
+            <Setter Property="MinWidth" Value="{DynamicResource GlobalScrollBarWidth}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ScrollBar">
+                        <Track x:Name="PART_Track" IsDirectionReversed="True">
+                            <Track.Thumb>
+                                <Thumb>
+                                    <Thumb.Template>
+                                        <ControlTemplate TargetType="Thumb">
+                                            <Border CornerRadius="3" Background="{DynamicResource BorderSub}" Margin="0,1"/>
+                                        </ControlTemplate>
+                                    </Thumb.Template>
+                                </Thumb>
+                            </Track.Thumb>
+                        </Track>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="Orientation" Value="Horizontal">
+                    <Setter Property="Width" Value="Auto"/>
+                    <Setter Property="Height" Value="{DynamicResource GlobalScrollBarHeight}"/>
+                    <Setter Property="MinHeight" Value="{DynamicResource GlobalScrollBarHeight}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- ══════ Slider Repeat Button (transparent track hit area) ══════ -->
+        <Style x:Key="SliderRepeatButtonStyle" TargetType="RepeatButton">
+            <Setter Property="OverridesDefaultStyle" Value="true" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Focusable" Value="false" />
+            <Setter Property="IsTabStop" Value="false" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RepeatButton">
+                        <Border Background="Transparent" />
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ══════ Slider Style (implicit, modern glass morph) ══════ -->
+        <Style TargetType="Slider">
+            <Setter Property="Stylus.IsPressAndHoldEnabled" Value="false" />
+            <Setter Property="Background" Value="{DynamicResource InputBg}" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource Accent}" />
+            <Setter Property="MinHeight" Value="24"/>
+            <Setter Property="IsMoveToPointEnabled" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Slider">
+                        <Grid Background="Transparent">
+                            <Border x:Name="TrackBackground" 
+                                    Height="8" 
+                                    CornerRadius="4"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="0"
+                                    VerticalAlignment="Center">
+                                <Border.Effect>
+                                    <DropShadowEffect Color="Black" BlurRadius="3" ShadowDepth="1" Opacity="0.25"/>
+                                </Border.Effect>
+                            </Border>
+                            <Track x:Name="PART_Track">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Command="{x:Static Slider.DecreaseLarge}" Style="{StaticResource SliderRepeatButtonStyle}"/>
+                                </Track.DecreaseRepeatButton>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Command="{x:Static Slider.IncreaseLarge}" Style="{StaticResource SliderRepeatButtonStyle}"/>
+                                </Track.IncreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb x:Name="Thumb" Width="18" Height="18" Focusable="False">
+                                        <Thumb.Template>
+                                            <ControlTemplate TargetType="Thumb">
+                                                <Grid x:Name="ThumbRoot" RenderTransformOrigin="0.5,0.5">
+                                                    <Grid.RenderTransform>
+                                                        <ScaleTransform x:Name="ThumbScale" ScaleX="1.0" ScaleY="1.0"/>
+                                                    </Grid.RenderTransform>
+                                                    
+                                                    <!-- Glass visual (revealed on drag) -->
+                                                    <Ellipse x:Name="ElGlass" Fill="#28FFFFFF" Stroke="White" StrokeThickness="1.5" Opacity="0">
+                                                        <Ellipse.Effect>
+                                                            <DropShadowEffect Color="White" BlurRadius="12" ShadowDepth="0" Opacity="0.45"/>
+                                                        </Ellipse.Effect>
+                                                    </Ellipse>
+
+                                                    <!-- Normal visual (solid white, hides on drag) -->
+                                                    <Ellipse x:Name="ElNormal" Fill="White" Stroke="#E0E0E0" StrokeThickness="0.5" Opacity="1">
+                                                        <Ellipse.Effect>
+                                                            <DropShadowEffect Color="Black" BlurRadius="4" ShadowDepth="1" Opacity="0.3"/>
+                                                        </Ellipse.Effect>
+                                                    </Ellipse>
+                                                </Grid>
+                                                <ControlTemplate.Triggers>
+                                                    <!-- Hover State -->
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Trigger.EnterActions>
+                                                            <BeginStoryboard>
+                                                                <Storyboard>
+                                                                    <DoubleAnimation Storyboard.TargetName="ThumbScale" Storyboard.TargetProperty="ScaleX" To="1.15" Duration="0:0:0.12">
+                                                                        <DoubleAnimation.EasingFunction><CircleEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                                                    </DoubleAnimation>
+                                                                    <DoubleAnimation Storyboard.TargetName="ThumbScale" Storyboard.TargetProperty="ScaleY" To="1.15" Duration="0:0:0.12">
+                                                                        <DoubleAnimation.EasingFunction><CircleEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                                                    </DoubleAnimation>
+                                                                </Storyboard>
+                                                            </BeginStoryboard>
+                                                        </Trigger.EnterActions>
+                                                        <Trigger.ExitActions>
+                                                            <BeginStoryboard>
+                                                                <Storyboard>
+                                                                    <DoubleAnimation Storyboard.TargetName="ThumbScale" Storyboard.TargetProperty="ScaleX" To="1.0" Duration="0:0:0.12">
+                                                                        <DoubleAnimation.EasingFunction><CircleEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                                                    </DoubleAnimation>
+                                                                    <DoubleAnimation Storyboard.TargetName="ThumbScale" Storyboard.TargetProperty="ScaleY" To="1.0" Duration="0:0:0.12">
+                                                                        <DoubleAnimation.EasingFunction><CircleEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                                                    </DoubleAnimation>
+                                                                </Storyboard>
+                                                            </BeginStoryboard>
+                                                        </Trigger.ExitActions>
+                                                        <Setter TargetName="ElNormal" Property="Cursor" Value="Hand"/>
+                                                        <Setter TargetName="ElNormal" Property="Stroke" Value="#B0B0B0"/>
+                                                    </Trigger>
+                                                    
+                                                    <!-- Drag State (Liquid Glass Morph) -->
+                                                    <Trigger Property="IsDragging" Value="True">
+                                                        <Trigger.EnterActions>
+                                                            <BeginStoryboard>
+                                                                <Storyboard>
+                                                                    <DoubleAnimation Storyboard.TargetName="ThumbScale" Storyboard.TargetProperty="ScaleX" To="1.45" Duration="0:0:0.18">
+                                                                        <DoubleAnimation.EasingFunction><CircleEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                                                    </DoubleAnimation>
+                                                                    <DoubleAnimation Storyboard.TargetName="ThumbScale" Storyboard.TargetProperty="ScaleY" To="1.45" Duration="0:0:0.18">
+                                                                        <DoubleAnimation.EasingFunction><CircleEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                                                    </DoubleAnimation>
+                                                                    <DoubleAnimation Storyboard.TargetName="ElNormal" Storyboard.TargetProperty="Opacity" To="0.0" Duration="0:0:0.18"/>
+                                                                    <DoubleAnimation Storyboard.TargetName="ElGlass" Storyboard.TargetProperty="Opacity" To="1.0" Duration="0:0:0.18"/>
+                                                                </Storyboard>
+                                                            </BeginStoryboard>
+                                                        </Trigger.EnterActions>
+                                                        <Trigger.ExitActions>
+                                                            <BeginStoryboard>
+                                                                <Storyboard>
+                                                                    <DoubleAnimation Storyboard.TargetName="ThumbScale" Storyboard.TargetProperty="ScaleX" To="1.0" Duration="0:0:0.18">
+                                                                        <DoubleAnimation.EasingFunction><CircleEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                                                    </DoubleAnimation>
+                                                                    <DoubleAnimation Storyboard.TargetName="ThumbScale" Storyboard.TargetProperty="ScaleY" To="1.0" Duration="0:0:0.18">
+                                                                        <DoubleAnimation.EasingFunction><CircleEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                                                    </DoubleAnimation>
+                                                                    <DoubleAnimation Storyboard.TargetName="ElNormal" Storyboard.TargetProperty="Opacity" To="1.0" Duration="0:0:0.18"/>
+                                                                    <DoubleAnimation Storyboard.TargetName="ElGlass" Storyboard.TargetProperty="Opacity" To="0.0" Duration="0:0:0.18"/>
+                                                                </Storyboard>
+                                                            </BeginStoryboard>
+                                                        </Trigger.ExitActions>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Thumb.Template>
+                                    </Thumb>
+                                </Track.Thumb>
+                            </Track>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="TrackBackground" Property="Opacity" Value="0.3"/>
+                                <Setter Property="Opacity" Value="0.5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        
+        <Style TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, sans-serif"/>
+        </Style>
+
+        <Style x:Key="IconBtn" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bg" Background="{TemplateBinding Background}" CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bg" Property="Background" Value="#25FFFFFF"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SidebarTabBtn" TargetType="RadioButton">
+            <Setter Property="Foreground" Value="{DynamicResource TextSec}"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Margin" Value="8,2,8,2"/>
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="Bd" CornerRadius="8" Background="Transparent" SnapsToDevicePixels="True">
+                            <Grid>
+                                <Border x:Name="BgHover" CornerRadius="8" Background="#0AFFFFFF" Opacity="0"/>
+                                <Border x:Name="BgActive" CornerRadius="8" Background="#15FFFFFF" Opacity="0"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Border x:Name="Indicator" Grid.Column="0" Width="3" Height="14" CornerRadius="1.5"
+                                            Background="{DynamicResource Accent}" Margin="8,0,0,0" VerticalAlignment="Center"
+                                            Opacity="0" RenderTransformOrigin="0.5,0.5">
+                                        <Border.RenderTransform>
+                                            <ScaleTransform ScaleY="0"/>
+                                        </Border.RenderTransform>
+                                    </Border>
+                                    <ContentPresenter Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="12,0,12,0"/>
+                                </Grid>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="BgHover" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.12"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="BgHover" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.12"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="BgActive" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.15"/>
+                                            <DoubleAnimation Storyboard.TargetName="Indicator" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.15"/>
+                                            <DoubleAnimation Storyboard.TargetName="Indicator" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="1" Duration="0:0:0.2">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <BackEase EasingMode="EaseOut" Amplitude="0.5"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="BgActive" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.15"/>
+                                            <DoubleAnimation Storyboard.TargetName="Indicator" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.15"/>
+                                            <DoubleAnimation Storyboard.TargetName="Indicator" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="0" Duration="0:0:0.15"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="ToggleSwitch" TargetType="CheckBox">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Width" Value="38"/>
+            <Setter Property="Height" Value="20"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="CheckBox">
+                        <Border x:Name="Track" Background="#15FFFFFF" BorderBrush="#18FFFFFF" BorderThickness="0.5" CornerRadius="10">
+                            <Border x:Name="Thumb" Width="14" Height="14" CornerRadius="7" Background="#E6FFFFFF" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="3,0,3,0" RenderTransformOrigin="0.5,0.5">
+                                <Border.RenderTransform>
+                                    <TransformGroup>
+                                        <TranslateTransform/>
+                                        <ScaleTransform/>
+                                    </TransformGroup>
+                                </Border.RenderTransform>
+                            </Border>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Track" Property="Background" Value="{DynamicResource Accent}"/>
+                                <Setter TargetName="Track" Property="BorderBrush" Value="Transparent"/>
+                                <Setter TargetName="Thumb" Property="Background" Value="#FFFFFFFF"/>
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="Thumb" Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(TranslateTransform.X)" To="18" Duration="0:0:0.16">
+                                                <DoubleAnimation.EasingFunction><QuadraticEase EasingMode="EaseInOut"/></DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="Thumb" Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(TranslateTransform.X)" To="0" Duration="0:0:0.16">
+                                                <DoubleAnimation.EasingFunction><QuadraticEase EasingMode="EaseInOut"/></DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="TextBox">
+            <Setter Property="Background" Value="{DynamicResource InputBg}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="CaretBrush" Value="{DynamicResource Accent}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSub}"/>
+            <Setter Property="BorderThickness" Value="0.5"/>
+            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border x:Name="Bd" CornerRadius="6"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                Padding="{TemplateBinding Padding}">
+                            <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HoverBg}"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource BorderSub}"/>
+                            </Trigger>
+                            <Trigger Property="IsFocused" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ActiveBg}"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource Accent}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <ControlTemplate x:Key="ComboToggle" TargetType="ToggleButton">
+            <Border x:Name="Bd" CornerRadius="8"
+                    Background="{DynamicResource InputBg}"
+                    BorderBrush="{DynamicResource BorderSub}"
+                    BorderThickness="0.5">
+                <Path x:Name="Arrow" Fill="{DynamicResource TextSec}"
+                      HorizontalAlignment="Right" VerticalAlignment="Center"
+                      Margin="0,0,8,0" Data="M 0 0 L 4 4 L 8 0 Z"/>
+            </Border>
+            <ControlTemplate.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HoverBg}"/>
+                    <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource BorderSub}"/>
+                </Trigger>
+                <Trigger Property="IsChecked" Value="True">
+                    <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ActiveBg}"/>
+                    <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource Accent}"/>
+                </Trigger>
+            </ControlTemplate.Triggers>
+        </ControlTemplate>
+
+        <Style TargetType="ComboBox">
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="anim:DropdownAnimBehavior.IsEnabled" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
+                        <Grid>
+                            <ToggleButton x:Name="ToggleButton"
+                                          Template="{StaticResource ComboToggle}"
+                                          IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                          Focusable="False" ClickMode="Press"/>
+                            <ContentPresenter x:Name="ContentSite" IsHitTestVisible="False"
+                                              Content="{TemplateBinding SelectionBoxItem}"
+                                              ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                              Margin="8,5,24,5"
+                                              VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                            <Popup x:Name="PART_Popup" IsOpen="{TemplateBinding IsDropDownOpen}"
+                                   AllowsTransparency="True" Focusable="False"
+                                   PopupAnimation="None" Placement="Bottom">
+                                <Border Background="{DynamicResource PopupBg}"
+                                        BorderBrush="{DynamicResource PopupBorder}"
+                                        BorderThickness="1" CornerRadius="10"
+                                        Margin="0,4,0,0" Padding="0,4"
+                                        MinWidth="{TemplateBinding ActualWidth}"
+                                        MaxHeight="{TemplateBinding MaxDropDownHeight}">
+                                    <ScrollViewer SnapsToDevicePixels="True">
+                                        <StackPanel IsItemsHost="True"
+                                                    KeyboardNavigation.DirectionalNavigation="Contained"/>
+                                    </ScrollViewer>
+                                </Border>
+                            </Popup>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="ComboBoxItem">
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="Padding" Value="8,5"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBoxItem">
+                        <Border x:Name="Bd" Background="Transparent" CornerRadius="4" Margin="4,2"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsHighlighted" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HoverBg}"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ActiveBg}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="OutlineBtn" TargetType="Button">
+            <Setter Property="Foreground" Value="{DynamicResource TextSec}"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSub}"/>
+            <Setter Property="BorderThickness" Value="0.5"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" CornerRadius="10"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HoverBg}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ActiveBg}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="GradRectBtn" TargetType="Button">
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" CornerRadius="10" Padding="12,0"
+                                BorderThickness="0.5"
+                                RenderTransformOrigin="0.5,0.5">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                    <GradientStop Color="#36FFFFFF" Offset="0"/>
+                                    <GradientStop Color="#24FFFFFF" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Border.Background>
+                            <Border.BorderBrush>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                    <GradientStop Color="#50FFFFFF" Offset="0"/>
+                                    <GradientStop Color="#20FFFFFF" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Border.BorderBrush>
+                            <Border.RenderTransform>
+                                <ScaleTransform/>
+                            </Border.RenderTransform>
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsMouseOver" Value="False"/>
+                                    <Condition Property="IsPressed" Value="False"/>
+                                </MultiTrigger.Conditions>
+                                <MultiTrigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="Bd" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="1.0" Duration="0:0:0.15">
+                                                <DoubleAnimation.EasingFunction><CircleEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                            <DoubleAnimation Storyboard.TargetName="Bd" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="1.0" Duration="0:0:0.15">
+                                                <DoubleAnimation.EasingFunction><CircleEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </MultiTrigger.EnterActions>
+                            </MultiTrigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsMouseOver" Value="True"/>
+                                    <Condition Property="IsPressed" Value="False"/>
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="Bd" Property="Background">
+                                    <Setter.Value>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                            <GradientStop Color="#4AFFFFFF" Offset="0"/>
+                                            <GradientStop Color="#33FFFFFF" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Setter.Value>
+                                </Setter>
+                                <Setter TargetName="Bd" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="White" BlurRadius="12" Opacity="0.18" ShadowDepth="0"/>
+                                    </Setter.Value>
+                                </Setter>
+                                <MultiTrigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="Bd" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="1.03" Duration="0:0:0.15">
+                                                <DoubleAnimation.EasingFunction><CircleEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                            <DoubleAnimation Storyboard.TargetName="Bd" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="1.03" Duration="0:0:0.15">
+                                                <DoubleAnimation.EasingFunction><CircleEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </MultiTrigger.EnterActions>
+                            </MultiTrigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background">
+                                    <Setter.Value>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                            <GradientStop Color="#5AFFFFFF" Offset="0"/>
+                                            <GradientStop Color="#44FFFFFF" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Setter.Value>
+                                </Setter>
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="Bd" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="0.96" Duration="0:0:0.1">
+                                                <DoubleAnimation.EasingFunction><CircleEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                            <DoubleAnimation Storyboard.TargetName="Bd" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="0.96" Duration="0:0:0.1">
+                                                <DoubleAnimation.EasingFunction><CircleEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid x:Name="RootGrid" Opacity="0" RenderTransformOrigin="0.5,0.5">
+        <Grid.RenderTransform>
+            <TransformGroup>
+                <ScaleTransform x:Name="WindowScale"/>
+                <TranslateTransform x:Name="WindowTranslate"/>
+            </TransformGroup>
+        </Grid.RenderTransform>
+
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- ═══ Top Card: Simple Settings ═══ -->
+            <Border x:Name="SimpleBorder" Grid.Row="0" CornerRadius="16"
+                    Background="{DynamicResource BgDeep}"
+                    BorderBrush="{DynamicResource BorderSub}" BorderThickness="1"
+                    Margin="12,12,12,6" Height="430">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="40"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Title Bar / Header -->
+                    <Border Grid.Row="0" Background="Transparent" MouseLeftButtonDown="TitleBar_Drag">
+                        <Grid Margin="16,0">
+                           <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                               <TextBlock Text="Settings" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}"/>
+                           </StackPanel>
+                           <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                               <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
+                                   <TextBlock Text="Expert Mode" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextSec}" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                   <CheckBox x:Name="ChkExpertMode" Style="{StaticResource ToggleSwitch}" VerticalAlignment="Center" Checked="ChkExpertMode_Changed" Unchecked="ChkExpertMode_Changed"/>
+                               </StackPanel>
+                               <Button Style="{StaticResource IconBtn}" Foreground="#FF6B6B" Width="28" Height="28" Click="Cancel_Click">
+                                   <TextBlock Text="✕" FontSize="11"/>
+                               </Button>
+                           </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Profiles Bar (No Emojis) -->
+                    <Border Grid.Row="1" Margin="16,0,16,6" Padding="10,6" Background="#0CFFFFFF" CornerRadius="10" BorderBrush="#18FFFFFF" BorderThickness="0.5">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="Profile:" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextSec}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <ComboBox x:Name="CmbProfile" Width="140" VerticalAlignment="Center" SelectionChanged="CmbProfile_SelectionChanged"/>
+                                <TextBox x:Name="TxtProfileName" Width="140" FontSize="11" VerticalAlignment="Center" Visibility="Collapsed" KeyDown="TxtProfileName_KeyDown" LostFocus="TxtProfileName_LostFocus"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                <Button x:Name="BtnSaveProfile" Style="{StaticResource OutlineBtn}" Content="Save" FontSize="11" Margin="4,0,0,0" Padding="8,3" Click="BtnSaveProfile_Click"/>
+                                <Button x:Name="BtnRenameProfile" Style="{StaticResource OutlineBtn}" Content="Rename" FontSize="11" Margin="4,0,0,0" Padding="8,3" Click="BtnRenameProfile_Click"/>
+                                <Button x:Name="BtnDeleteProfile" Style="{StaticResource OutlineBtn}" Content="Delete" FontSize="11" Foreground="#FF6B6B" Margin="4,0,0,0" Padding="8,3" Click="BtnDeleteProfile_Click"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Simple Settings Panels (Scrollable Grid) -->
+                    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="16,0">
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Left Column: General Playback & Vis -->
+                            <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                                <TextBlock Text="GENERAL &amp; PLAYBACK" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource Accent}" Margin="4,4,4,6"/>
+                                <Border Background="#0CFFFFFF" BorderBrush="#18FFFFFF" BorderThickness="0.5" CornerRadius="12" Padding="12,8">
+                                    <StackPanel>
+                                        <Grid Margin="0,4">
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Text="Launch on Startup" FontSize="12" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
+                                                <TextBlock Text="Automatically start with Windows" FontSize="9.5" Foreground="{DynamicResource TextSec}" Opacity="0.7"/>
+                                            </StackPanel>
+                                            <CheckBox x:Name="ChkStartup" Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                        </Grid>
+                                        <Grid Margin="0,4">
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Text="Auto-Play on Launch" FontSize="12" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
+                                                <TextBlock Text="Automatically play media on startup" FontSize="9.5" Foreground="{DynamicResource TextSec}" Opacity="0.7"/>
+                                            </StackPanel>
+                                            <CheckBox x:Name="ChkAutoPlayOnLaunch" Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                        </Grid>
+                                        <Grid Margin="0,4">
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Text="Keep Player Topmost" FontSize="12" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
+                                                <TextBlock Text="Ensure the player stays above other windows" FontSize="9.5" Foreground="{DynamicResource TextSec}" Opacity="0.7"/>
+                                            </StackPanel>
+                                            <CheckBox x:Name="ChkKeepTopmost" Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                        </Grid>
+                                        <Grid Margin="0,4">
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Text="Show Player Controls" FontSize="12" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
+                                                <TextBlock Text="Display the player in the taskbar" FontSize="9.5" Foreground="{DynamicResource TextSec}" Opacity="0.7"/>
+                                            </StackPanel>
+                                            <CheckBox x:Name="ChkShowPlayer" Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                        </Grid>
+                                        <Grid Margin="0,4">
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Text="Volume Slider Popup" FontSize="12" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
+                                                <TextBlock Text="Enable hovering over the player for volume slider" FontSize="9.5" Foreground="{DynamicResource TextSec}" Opacity="0.7"/>
+                                            </StackPanel>
+                                            <CheckBox x:Name="ChkVolumeSlider" Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                        </Grid>
+                                        <Grid Margin="0,4">
+                                            <StackPanel VerticalAlignment="Center" Margin="0,0,90,0">
+                                                <TextBlock Text="Auto-hide Delay" FontSize="12" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
+                                                <TextBlock Text="Set to 0 to disable auto-hide" FontSize="9.5" Foreground="{DynamicResource TextSec}" Opacity="0.7"/>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                                <Slider x:Name="SldAutoHide" Minimum="0" Maximum="300" TickFrequency="5" IsSnapToTickEnabled="True" Width="70" ValueChanged="SldAutoHide_ValueChanged"/>
+                                                <TextBlock x:Name="TxtAutoHideVal" Text="60s" FontSize="11.5" Foreground="{DynamicResource TextPrimary}" Width="35" TextAlignment="Right" VerticalAlignment="Center" Margin="4,0,0,0"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+
+                            <!-- Right Column: Layout & Basic Appearance -->
+                            <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                                <TextBlock Text="LAYOUT &amp; APPEARANCE" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource Accent}" Margin="4,4,4,6"/>
+                                <Border Background="#0CFFFFFF" BorderBrush="#18FFFFFF" BorderThickness="0.5" CornerRadius="12" Padding="12,8">
+                                    <StackPanel>
+                                        <Grid Margin="0,4">
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Text="Layout Style" FontSize="12" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
+                                            </StackPanel>
+                                            <ComboBox x:Name="CmbLayout" HorizontalAlignment="Right" VerticalAlignment="Center" Width="140">
+                                                <ComboBoxItem Content="Compact" Tag="Compact"/>
+                                                <ComboBoxItem Content="Standard" Tag="Standard"/>
+                                                <ComboBoxItem Content="Expanded" Tag="Expanded"/>
+                                            </ComboBox>
+                                        </Grid>
+                                        <Grid Margin="0,4">
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Text="Hide Artist &amp; Center Title" FontSize="12" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
+                                            </StackPanel>
+                                            <CheckBox x:Name="ChkHideArtist" Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                        </Grid>
+                                        <Grid Margin="0,4">
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Text="App Theme" FontSize="12" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
+                                            </StackPanel>
+                                            <ComboBox x:Name="CmbTheme" HorizontalAlignment="Right" VerticalAlignment="Center" Width="90">
+                                                <ComboBoxItem Content="System" Tag="System"/>
+                                                <ComboBoxItem Content="Light" Tag="Light"/>
+                                                <ComboBoxItem Content="Dark" Tag="Dark"/>
+                                            </ComboBox>
+                                        </Grid>
+                                        <Grid Margin="0,4">
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Text="Accent Color" FontSize="12" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
+                                            </StackPanel>
+                                            <ComboBox x:Name="CmbAccentColor" HorizontalAlignment="Right" VerticalAlignment="Center" Width="120">
+                                                <ComboBoxItem Content="Default Blue" Tag="#0078D7"/>
+                                                <ComboBoxItem Content="Emerald Green" Tag="#107C41"/>
+                                                <ComboBoxItem Content="Sunset Orange" Tag="#D83B01"/>
+                                                <ComboBoxItem Content="Crimson Red" Tag="#E81123"/>
+                                                <ComboBoxItem Content="Amethyst Purple" Tag="#8660A9"/>
+                                                <ComboBoxItem Content="Sakura Pink" Tag="#E3008C"/>
+                                            </ComboBox>
+                                        </Grid>
+                                        <Grid Margin="0,4">
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Text="Border Style" FontSize="12" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
+                                            </StackPanel>
+                                            <ComboBox x:Name="CmbBorderMode" HorizontalAlignment="Right" VerticalAlignment="Center" Width="90">
+                                                <ComboBoxItem Content="None" Tag="None"/>
+                                                <ComboBoxItem Content="Static" Tag="Static"/>
+                                                <ComboBoxItem Content="Timeline" Tag="Timeline"/>
+                                            </ComboBox>
+                                        </Grid>
+                                        <Grid Margin="0,4">
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Text="Transparency" FontSize="12" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
+                                            </StackPanel>
+                                            <CheckBox x:Name="ChkEnableTransparency" Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center" Checked="ChkEnableTransparency_Changed" Unchecked="ChkEnableTransparency_Changed"/>
+                                        </Grid>
+                                        <Grid x:Name="RowBackgroundOpacity" Margin="0,4">
+                                            <StackPanel VerticalAlignment="Center" Margin="0,0,100,0">
+                                                <TextBlock Text="Background Opacity" FontSize="12" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                                <Slider x:Name="SldBackgroundOpacity" Minimum="10" Maximum="100" Width="70" ValueChanged="SldBackgroundOpacity_ValueChanged"/>
+                                                <TextBlock x:Name="TxtBackgroundOpacityVal" Text="40%" FontSize="11" Foreground="{DynamicResource TextPrimary}" Width="30" TextAlignment="Right" VerticalAlignment="Center" Margin="4,0,0,0"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </Grid>
+                    </ScrollViewer>
+
+                    <!-- Save / Exit Buttons at Bottom of Simple Settings -->
+                    <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="16,6,16,12">
+                        <Button Content="Cancel" Style="{StaticResource OutlineBtn}" Margin="0,0,8,0" Click="Cancel_Click"/>
+                        <Button Content="Save" Style="{StaticResource OutlineBtn}" Margin="0,0,8,0" Click="Save_Click"/>
+                        <Button Content="Save &amp; Exit" Style="{StaticResource GradRectBtn}" Click="SaveAndExit_Click"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- ═══ Bottom Card: Expert Settings ═══ -->
+            <Border x:Name="ExpertBorder" Grid.Row="1" CornerRadius="16"
+                    Background="{DynamicResource BgDeep}"
+                    BorderBrush="{DynamicResource BorderSub}" BorderThickness="1"
+                    Margin="12,6,12,12" Height="330" Visibility="Collapsed">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="190"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Expert Sidebar Tabs -->
+                    <Border Grid.Column="0" Background="#0C000000" BorderBrush="#1AFFFFFF" BorderThickness="0,0,1,0" CornerRadius="16,0,0,16">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <StackPanel Grid.Row="0" Margin="18,18,18,10">
+                                <TextBlock Text="Expert Settings" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource Accent}"/>
+                            </StackPanel>
+                            <StackPanel Grid.Row="1" x:Name="TabBar" Margin="0,4,0,0">
+                                <RadioButton x:Name="TabPositioning" Style="{StaticResource SidebarTabBtn}" Content="Positioning" IsChecked="True" GroupName="SettingsTab" Checked="Tab_Changed"/>
+                                <RadioButton x:Name="TabSizing" Style="{StaticResource SidebarTabBtn}" Content="Dynamic Sizing" GroupName="SettingsTab" Checked="Tab_Changed"/>
+                                <RadioButton x:Name="TabScrolling" Style="{StaticResource SidebarTabBtn}" Content="Scrolling" GroupName="SettingsTab" Checked="Tab_Changed"/>
+                                <RadioButton x:Name="TabHotkeys" Style="{StaticResource SidebarTabBtn}" Content="Hotkeys" GroupName="SettingsTab" Checked="Tab_Changed"/>
+                                <RadioButton x:Name="TabPerformance" Style="{StaticResource SidebarTabBtn}" Content="Performance" GroupName="SettingsTab" Checked="Tab_Changed"/>
+                                <RadioButton x:Name="TabAdvancedStyle" Style="{StaticResource SidebarTabBtn}" Content="Advanced Style" GroupName="SettingsTab" Checked="Tab_Changed"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Expert Content Display -->
+                    <Grid Grid.Column="1">
+                        <ScrollViewer VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Disabled" Margin="16">
+                            <Grid Margin="0,0,0,8">
+                                
+                                <!-- 1. Positioning Panel -->
+                                <StackPanel x:Name="PanelPositioning">
+                                    <TextBlock Text="SCREEN POSITION OFFSETS" FontSize="10.5" FontWeight="Bold" Foreground="{DynamicResource Accent}" Margin="4,8,4,8"/>
+                                    <Border Background="#0CFFFFFF" BorderBrush="#18FFFFFF" BorderThickness="0.5" CornerRadius="12" Margin="0,0,0,16">
+                                        <StackPanel>
+                                            <Border Padding="14,12" BorderBrush="#10FFFFFF" BorderThickness="0,0,0,0.5">
+                                                <Grid>
+                                                    <StackPanel VerticalAlignment="Center" Margin="0,0,160,0">
+                                                        <TextBlock Text="Horizontal Offset (px)" FontSize="12.5" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
+                                                        <TextBlock Text="Offset from default position" FontSize="10" Foreground="{DynamicResource TextSec}" Opacity="0.7" Margin="0,2,0,0"/>
+                                                    </StackPanel>
+                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                                        <Slider x:Name="SldXOffset" Minimum="-300" Maximum="300" TickFrequency="5" IsSnapToTickEnabled="True" Width="100" VerticalAlignment="Center" ValueChanged="SldXOffset_ValueChanged"/>
+                                                        <TextBlock x:Name="TxtXOffsetVal" Text="0px" FontSize="12" Foreground="{DynamicResource TextPrimary}" Width="45" TextAlignment="Right" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Border>
+                                            <Border Padding="14,12">
+                                                <Grid>
+                                                    <StackPanel VerticalAlignment="Center" Margin="0,0,160,0">
+                                                        <TextBlock Text="Vertical Offset (px)" FontSize="12.5" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
+                                                        <TextBlock Text="Offset from default vertical position" FontSize="10" Foreground="{DynamicResource TextSec}" Opacity="0.7" Margin="0,2,0,0"/>
+                                                    </StackPanel>
+                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                                        <Slider x:Name="SldYOffset" Minimum="-20" Maximum="20" TickFrequency="1" IsSnapToTickEnabled="True" Width="100" VerticalAlignment="Center" ValueChanged="SldYOffset_ValueChanged"/>
+                                                        <TextBlock x:Name="TxtYOffsetVal" Text="0px" FontSize="12" Foreground="{DynamicResource TextPrimary}" Width="45" TextAlignment="Right" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Border>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+
+                                <!-- 2. Dynamic Sizing Panel -->
+                                <StackPanel x:Name="PanelSizing" Visibility="Collapsed">
+                                    <TextBlock Text="DYNAMIC SIZING OPTIONS" FontSize="10.5" FontWeight="Bold" Foreground="{DynamicResource Accent}" Margin="4,8,4,8"/>
+                                    <Border Background="#0CFFFFFF" BorderBrush="#18FFFFFF" BorderThickness="0.5" CornerRadius="12" Margin="0,0,0,16">
+                                        <StackPanel>
+                                            <Border Padding="14,12" BorderBrush="#10FFFFFF" BorderThickness="0,0,0,0.5">
+                                                <Grid>
+                                                    <StackPanel VerticalAlignment="Center" Margin="0,0,50,0">
+                                                        <TextBlock Text="Enable Dynamic Sizing" FontSize="12.5" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
+                                                        <TextBlock Text="Automatically adjust window width to text length" FontSize="10" Foreground="{DynamicResource TextSec}" Opacity="0.7" Margin="0,2,0,0"/>
+                                                    </StackPanel>
+                                                    <CheckBox x:Name="ChkDynamicSizing" Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center" Checked="ChkDynamicSizing_Changed" Unchecked="ChkDynamicSizing_Changed"/>
+                                                </Grid>
+                                            </Border>
+                                            <Border Padding="14,12" BorderBrush="#10FFFFFF" BorderThickness="0,0,0,0.5">
+                                                <Grid>
+                                                    <StackPanel VerticalAlignment="Center" Margin="0,0,50,0">
+                                                        <TextBlock Text="Smart Resize" FontSize="12.5" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
+                                                        <TextBlock Text="Automatically shrink player to prevent overlapping with taskbar icons" FontSize="10" Foreground="{DynamicResource TextSec}" Opacity="0.7" Margin="0,2,0,0"/>
+                                                    </StackPanel>
+                                                    <CheckBox x:Name="ChkSmartResize" Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                                </Grid>
+                                            </Border>
+                                            <Border x:Name="RowSizingTarget" Padding="14,12" BorderBrush="#10FFFFFF" BorderThickness="0,0,0,0.5">
+                                                <Grid>
+                                                    <StackPanel VerticalAlignment="Center" Margin="0,0,120,0">
+                                                        <TextBlock Text="Sizing Dimension Source" FontSize="12.5" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
+                                                        <TextBlock Text="Select which metadata fields affect player size" FontSize="10" Foreground="{DynamicResource TextSec}" Opacity="0.7" Margin="0,2,0,0"/>
+                                                    </StackPanel>
+                                                    <ComboBox x:Name="CmbSizingTarget" HorizontalAlignment="Right" VerticalAlignment="Center" Width="150">
+                                                        <ComboBoxItem Content="Both (Title &amp; Artist)" Tag="Both"/>
+                                                        <ComboBoxItem Content="Title Only" Tag="TitleOnly"/>
+                                                        <ComboBoxItem Content="Artist Only" Tag="ArtistOnly"/>
+                                                    </ComboBox>
+                                                </Grid>
+                                            </Border>
+                                            <Border x:Name="RowMinWidth" Padding="14,12" BorderBrush="#10FFFFFF" BorderThickness="0,0,0,0.5">
+                                                <Grid>
+                                                    <StackPanel VerticalAlignment="Center" Margin="0,0,160,0">
+                                                        <TextBlock Text="Minimum Width (px)" FontSize="12.5" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
+                                                    </StackPanel>
+                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                                        <Slider x:Name="SldMinWidth" Minimum="150" Maximum="500" TickFrequency="10" IsSnapToTickEnabled="True" Width="100" VerticalAlignment="Center" ValueChanged="SldMinWidth_ValueChanged"/>
+                                                        <TextBlock x:Name="TxtMinWidthVal" Text="250px" FontSize="12" Foreground="{DynamicResource TextPrimary}" Width="45" TextAlignment="Right" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Border>
+                                            <Border x:Name="RowMaxWidth" Padding="14,12">
+                                                <Grid>
+                                                    <StackPanel VerticalAlignment="Center" Margin="0,0,160,0">
+                                                        <TextBlock Text="Maximum Width (px)" FontSize="12.5" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
+                                                    </StackPanel>
+                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                                        <Slider x:Name="SldMaxWidth" Minimum="200" Maximum="800" TickFrequency="10" IsSnapToTickEnabled="True" Width="100" VerticalAlignment="Center" ValueChanged="SldMaxWidth_ValueChanged"/>
+                                                        <TextBlock x:Name="TxtMaxWidthVal" Text="500px" FontSize="12" Foreground="{DynamicResource TextPrimary}" Width="45" TextAlignment="Right" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Border>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+
+                                <!-- 3. Scrolling Panel -->
+                                <StackPanel x:Name="PanelScrolling" Visibility="Collapsed">
+                                    <TextBlock Text="TEXT SCROLLING CUSTOMIZATION" FontSize="10.5" FontWeight="Bold" Foreground="{DynamicResource Accent}" Margin="4,8,4,8"/>
+                                    <Border Background="#0CFFFFFF" BorderBrush="#18FFFFFF" BorderThickness="0.5" CornerRadius="12" Margin="0,0,0,16">
+                                        <StackPanel>
+                                            <Border Padding="14,12" BorderBrush="#10FFFFFF" BorderThickness="0,0,0,0.5">
+                                                <Grid>
+                                                    <StackPanel VerticalAlignment="Center" Margin="0,0,120,0">
+                                                        <TextBlock Text="Scroll Long Text" FontSize="12.5" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
+                                                        <TextBlock Text="Enable animation for overflowing text" FontSize="10" Foreground="{DynamicResource TextSec}" Opacity="0.7" Margin="0,2,0,0"/>
+                                                    </StackPanel>
+                                                    <CheckBox x:Name="ChkScrollTextVisuals" Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                                </Grid>
+                                            </Border>
+                                            <Border Padding="14,12" BorderBrush="#10FFFFFF" BorderThickness="0,0,0,0.5">
+                                                <Grid>
+                                                    <StackPanel VerticalAlignment="Center" Margin="0,0,120,0">
+                                                        <TextBlock Text="Scroll Behavior" FontSize="12.5" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
+                                                        <TextBlock Text="Animation pattern style" FontSize="10" Foreground="{DynamicResource TextSec}" Opacity="0.7" Margin="0,2,0,0"/>
+                                                    </StackPanel>
+                                                    <ComboBox x:Name="CmbScrollBehavior" HorizontalAlignment="Right" VerticalAlignment="Center" Width="130">
+                                                        <ComboBoxItem Content="Marquee Loop" Tag="Marquee"/>
+                                                        <ComboBoxItem Content="Ping-Pong Bounce" Tag="PingPong"/>
+                                                        <ComboBoxItem Content="Scroll on Hover" Tag="Hover"/>
+                                                    </ComboBox>
+                                                </Grid>
+                                            </Border>
+                                            <Border Padding="14,12" BorderBrush="#10FFFFFF" BorderThickness="0,0,0,0.5">
+                                                <Grid>
+                                                    <StackPanel VerticalAlignment="Center" Margin="0,0,160,0">
+                                                        <TextBlock Text="Scroll Speed (px/s)" FontSize="12.5" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
+                                                    </StackPanel>
+                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                                        <Slider x:Name="SldScrollSpeed" Minimum="10" Maximum="100" Width="100" VerticalAlignment="Center" ValueChanged="SldScrollSpeed_ValueChanged"/>
+                                                        <TextBlock x:Name="TxtScrollSpeedVal" Text="30 px/s" FontSize="12" Foreground="{DynamicResource TextPrimary}" Width="50" TextAlignment="Right" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Border>
+                                            <Border Padding="14,12">
+                                                <Grid>
+                                                    <StackPanel VerticalAlignment="Center" Margin="0,0,160,0">
+                                                        <TextBlock Text="Start Scroll Delay (s)" FontSize="12.5" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
+                                                    </StackPanel>
+                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                                        <Slider x:Name="SldScrollDelay" Minimum="0" Maximum="5" TickFrequency="0.5" IsSnapToTickEnabled="True" Width="100" VerticalAlignment="Center" ValueChanged="SldScrollDelay_ValueChanged"/>
+                                                        <TextBlock x:Name="TxtScrollDelayVal" Text="1.5s" FontSize="12" Foreground="{DynamicResource TextPrimary}" Width="50" TextAlignment="Right" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Border>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+
+                                <!-- 4. Hotkeys Panel -->
+                                <StackPanel x:Name="PanelHotkeys" Visibility="Collapsed">
+                                    <TextBlock Text="GLOBAL HOTKEYS" FontSize="10.5" FontWeight="Bold" Foreground="{DynamicResource Accent}" Margin="4,8,4,8"/>
+                                    <TextBlock Text="Click a button and press a key to bind it. Press Esc to clear." Foreground="{DynamicResource TextSec}" FontSize="11" Margin="4,0,0,8"/>
+                                    <Border Background="#0CFFFFFF" BorderBrush="#18FFFFFF" BorderThickness="0.5" CornerRadius="12" Margin="0,0,0,16">
+                                        <StackPanel>
+                                            <Border Padding="14,12" BorderBrush="#10FFFFFF" BorderThickness="0,0,0,0.5">
+                                                <Grid>
+                                                    <StackPanel VerticalAlignment="Center" Margin="0,0,120,0">
+                                                        <TextBlock Text="Play / Pause Key Code" FontSize="12.5" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
+                                                    </StackPanel>
+                                                    <Button x:Name="BtnPlayPauseHotkey" Style="{StaticResource OutlineBtn}" HorizontalAlignment="Right" VerticalAlignment="Center" Width="120" Click="HotkeyBtn_Click" PreviewKeyDown="HotkeyBtn_PreviewKeyDown" LostFocus="HotkeyBtn_LostFocus"/>
+                                                </Grid>
+                                            </Border>
+                                            <Border Padding="14,12" BorderBrush="#10FFFFFF" BorderThickness="0,0,0,0.5">
+                                                <Grid>
+                                                    <StackPanel VerticalAlignment="Center" Margin="0,0,120,0">
+                                                        <TextBlock Text="Previous Track Key Code" FontSize="12.5" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
+                                                    </StackPanel>
+                                                    <Button x:Name="BtnPrevHotkey" Style="{StaticResource OutlineBtn}" HorizontalAlignment="Right" VerticalAlignment="Center" Width="120" Click="HotkeyBtn_Click" PreviewKeyDown="HotkeyBtn_PreviewKeyDown" LostFocus="HotkeyBtn_LostFocus"/>
+                                                </Grid>
+                                            </Border>
+                                            <Border Padding="14,12">
+                                                <Grid>
+                                                    <StackPanel VerticalAlignment="Center" Margin="0,0,120,0">
+                                                        <TextBlock Text="Next Track Key Code" FontSize="12.5" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
+                                                    </StackPanel>
+                                                    <Button x:Name="BtnNextHotkey" Style="{StaticResource OutlineBtn}" HorizontalAlignment="Right" VerticalAlignment="Center" Width="120" Click="HotkeyBtn_Click" PreviewKeyDown="HotkeyBtn_PreviewKeyDown" LostFocus="HotkeyBtn_LostFocus"/>
+                                                </Grid>
+                                            </Border>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+
+                                <!-- 5. Performance Panel -->
+                                <StackPanel x:Name="PanelPerformance" Visibility="Collapsed">
+                                    <TextBlock Text="PERFORMANCE MODE" FontSize="10.5" FontWeight="Bold" Foreground="{DynamicResource Accent}" Margin="4,8,4,8"/>
+                                    <TextBlock Text="Enable options below to reduce CPU, GPU, and rendering workload on lower-end devices." Foreground="{DynamicResource TextSec}" FontSize="11" Margin="4,0,0,8"/>
+                                    <Border Background="#0CFFFFFF" BorderBrush="#18FFFFFF" BorderThickness="0.5" CornerRadius="12" Margin="0,0,0,16">
+                                        <StackPanel>
+                                            <Border Padding="14,12" BorderBrush="#10FFFFFF" BorderThickness="0,0,0,0.5">
+                                                <Grid>
+                                                    <StackPanel VerticalAlignment="Center" Margin="0,0,50,0">
+                                                        <TextBlock Text="Disable Fluid Animations" FontSize="12.5" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
+                                                        <TextBlock Text="Turn off background gradient transitions (saves GPU usage)" FontSize="10" Foreground="{DynamicResource TextSec}" Opacity="0.7" Margin="0,2,0,0"/>
+                                                    </StackPanel>
+                                                    <CheckBox x:Name="ChkDisableFluidAnimations" Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                                </Grid>
+                                            </Border>
+                                            <Border Padding="14,12" BorderBrush="#10FFFFFF" BorderThickness="0,0,0,0.5">
+                                                <Grid>
+                                                    <StackPanel VerticalAlignment="Center" Margin="0,0,50,0">
+                                                        <TextBlock Text="Disable Timeline Animation" FontSize="12.5" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
+                                                        <TextBlock Text="Updates progress bar border statically instead of continuously animating (saves CPU)" FontSize="10" Foreground="{DynamicResource TextSec}" Opacity="0.7" Margin="0,2,0,0"/>
+                                                    </StackPanel>
+                                                    <CheckBox x:Name="ChkDisableTimelineAnimation" Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                                </Grid>
+                                            </Border>
+                                            <Border Padding="14,12" BorderBrush="#10FFFFFF" BorderThickness="0,0,0,0.5">
+                                                <Grid>
+                                                    <StackPanel VerticalAlignment="Center" Margin="0,0,50,0">
+                                                        <TextBlock Text="Disable Visualizer (Audio Peak)" FontSize="12.5" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
+                                                        <TextBlock Text="Disables speaker volume animation to stop background rendering thread (saves CPU)" FontSize="10" Foreground="{DynamicResource TextSec}" Opacity="0.7" Margin="0,2,0,0"/>
+                                                    </StackPanel>
+                                                    <CheckBox x:Name="ChkDisableVisualizer" Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                                </Grid>
+                                            </Border>
+                                            <Border Padding="14,12" BorderBrush="#10FFFFFF" BorderThickness="0,0,0,0.5">
+                                                <Grid>
+                                                    <StackPanel VerticalAlignment="Center" Margin="0,0,50,0">
+                                                        <TextBlock Text="Disable Text Scrolling" FontSize="12.5" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
+                                                        <TextBlock Text="Keep long title and artist names stationary instead of scrolling (saves layout passes)" FontSize="10" Foreground="{DynamicResource TextSec}" Opacity="0.7" Margin="0,2,0,0"/>
+                                                    </StackPanel>
+                                                    <CheckBox x:Name="ChkDisableTextScrolling" Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                                </Grid>
+                                            </Border>
+                                            <Border Padding="14,12" BorderBrush="#10FFFFFF" BorderThickness="0,0,0,0.5">
+                                                <Grid>
+                                                    <StackPanel VerticalAlignment="Center" Margin="0,0,50,0">
+                                                        <TextBlock Text="Disable Album Art" FontSize="12.5" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
+                                                        <TextBlock Text="Do not load or render album covers (saves memory and loading overhead)" FontSize="10" Foreground="{DynamicResource TextSec}" Opacity="0.7" Margin="0,2,0,0"/>
+                                                    </StackPanel>
+                                                    <CheckBox x:Name="ChkDisableAlbumArt" Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                                </Grid>
+                                            </Border>
+                                            <Border Padding="14,12" BorderBrush="#10FFFFFF" BorderThickness="0,0,0,0.5">
+                                                <Grid>
+                                                    <StackPanel VerticalAlignment="Center" Margin="0,0,50,0">
+                                                        <TextBlock Text="Disable Transparency" FontSize="12.5" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
+                                                        <TextBlock Text="Use solid dark backgrounds instead of transparent overlays (saves GPU compositor overhead)" FontSize="10" Foreground="{DynamicResource TextSec}" Opacity="0.7" Margin="0,2,0,0"/>
+                                                    </StackPanel>
+                                                    <CheckBox x:Name="ChkDisableTransparency" Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                                </Grid>
+                                            </Border>
+                                            <Border Padding="14,12">
+                                                <Grid>
+                                                    <StackPanel VerticalAlignment="Center" Margin="0,0,50,0">
+                                                        <TextBlock Text="Optimize Timer Frequencies" FontSize="12.5" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
+                                                        <TextBlock Text="Reduces Z-order check and progress check frequency (saves background CPU ticks)" FontSize="10" Foreground="{DynamicResource TextSec}" Opacity="0.7" Margin="0,2,0,0"/>
+                                                    </StackPanel>
+                                                    <CheckBox x:Name="ChkOptimizeTimerFrequencies" Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                                </Grid>
+                                            </Border>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+
+                                <!-- 6. Advanced Style Panel -->
+                                <StackPanel x:Name="PanelAdvancedStyle" Visibility="Collapsed">
+                                    <TextBlock Text="BUTTON DIMENSIONS" FontSize="10.5" FontWeight="Bold" Foreground="{DynamicResource Accent}" Margin="4,8,4,8"/>
+                                    <Border Background="#0CFFFFFF" BorderBrush="#18FFFFFF" BorderThickness="0.5" CornerRadius="12" Margin="0,0,0,16">
+                                        <StackPanel>
+                                            <Border Padding="14,12" BorderBrush="#10FFFFFF" BorderThickness="0,0,0,0.5">
+                                                <Grid>
+                                                    <StackPanel VerticalAlignment="Center" Margin="0,0,160,0">
+                                                        <TextBlock Text="Button Size (px)" FontSize="12.5" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
+                                                    </StackPanel>
+                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                                        <Slider x:Name="SldButtonSize" Minimum="16" Maximum="48" TickFrequency="1" IsSnapToTickEnabled="True" Width="100" VerticalAlignment="Center" ValueChanged="SldButtonSize_ValueChanged"/>
+                                                        <TextBlock x:Name="TxtButtonSizeVal" Text="28px" FontSize="12" Foreground="{DynamicResource TextPrimary}" Width="45" TextAlignment="Right" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Border>
+                                            <Border Padding="14,12">
+                                                <Grid>
+                                                    <StackPanel VerticalAlignment="Center" Margin="0,0,160,0">
+                                                        <TextBlock Text="Button Gap (px)" FontSize="12.5" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
+                                                    </StackPanel>
+                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                                        <Slider x:Name="SldButtonGap" Minimum="0" Maximum="12" TickFrequency="1" IsSnapToTickEnabled="True" Width="100" VerticalAlignment="Center" ValueChanged="SldButtonGap_ValueChanged"/>
+                                                        <TextBlock x:Name="TxtButtonGapVal" Text="2px" FontSize="12" Foreground="{DynamicResource TextPrimary}" Width="45" TextAlignment="Right" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Border>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <TextBlock Text="ADVANCED AESTHETICS" FontSize="10.5" FontWeight="Bold" Foreground="{DynamicResource Accent}" Margin="4,8,4,8"/>
+                                    <Border Background="#0CFFFFFF" BorderBrush="#18FFFFFF" BorderThickness="0.5" CornerRadius="12" Margin="0,0,0,16">
+                                        <StackPanel>
+                                            <Border Padding="14,12" BorderBrush="#10FFFFFF" BorderThickness="0,0,0,0.5">
+                                                <Grid>
+                                                    <StackPanel VerticalAlignment="Center" Margin="0,0,50,0">
+                                                        <TextBlock Text="Hide Scrollbar" FontSize="12.5" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
+                                                        <TextBlock Text="Completely hide the settings scrollbar" FontSize="10" Foreground="{DynamicResource TextSec}" Opacity="0.7" Margin="0,2,0,0"/>
+                                                    </StackPanel>
+                                                    <CheckBox x:Name="ChkHideScrollbars" Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center" Checked="ChkHideScrollbars_Changed" Unchecked="ChkHideScrollbars_Changed"/>
+                                                </Grid>
+                                            </Border>
+                                            <Border Padding="14,12" BorderBrush="#10FFFFFF" BorderThickness="0,0,0,0.5">
+                                                <Grid>
+                                                    <StackPanel VerticalAlignment="Center" Margin="0,0,120,0">
+                                                        <TextBlock Text="Timeline Style" FontSize="12.5" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
+                                                        <TextBlock Text="Choose how the timeline border traces" FontSize="10" Foreground="{DynamicResource TextSec}" Opacity="0.7" Margin="0,2,0,0"/>
+                                                    </StackPanel>
+                                                    <ComboBox x:Name="CmbTimelineStyle" HorizontalAlignment="Right" VerticalAlignment="Center" Width="120">
+                                                        <ComboBoxItem Content="Default" Tag="Default"/>
+                                                        <ComboBoxItem Content="Flipped" Tag="Flipped"/>
+                                                        <ComboBoxItem Content="Both Sides" Tag="BothSides"/>
+                                                    </ComboBox>
+                                                </Grid>
+                                            </Border>
+                                            <Border Padding="14,12">
+                                                <Grid>
+                                                    <StackPanel VerticalAlignment="Center" Margin="0,0,160,0">
+                                                        <TextBlock Text="Adaptive Tint Intensity" FontSize="12.5" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
+                                                        <TextBlock Text="Strength of album art colors" FontSize="10" Foreground="{DynamicResource TextSec}" Opacity="0.7" Margin="0,2,0,0"/>
+                                                    </StackPanel>
+                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                                        <Slider x:Name="SldAdaptiveTintStrength" Minimum="0" Maximum="100" Width="100" VerticalAlignment="Center" ValueChanged="SldAdaptiveTintStrength_ValueChanged"/>
+                                                        <TextBlock x:Name="TxtAdaptiveTintStrengthVal" Text="70%" FontSize="12" Foreground="{DynamicResource TextPrimary}" Width="35" TextAlignment="Right" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Border>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+
+                            </Grid>
+                        </ScrollViewer>
+                    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</Window>
