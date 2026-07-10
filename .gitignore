@@ -51,3 +51,6 @@ TestResult.xml
 *.vspscc
 *.vssscc
 *.scc
+
+# Release archives
+*.zip
