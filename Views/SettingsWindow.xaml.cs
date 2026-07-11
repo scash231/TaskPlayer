@@ -22,6 +22,7 @@ namespace TaskbarMiniPlayer
         private bool _isAnimatingClose;
         private StackPanel? _activePanel;
         private bool _suppressProfileChange;
+        private readonly bool _spawnBelow;
 
         // Profile inline-edit state
         private enum ProfileEditMode { None, Save, Rename }
@@ -33,16 +34,36 @@ namespace TaskbarMiniPlayer
             _originRect = originRect;
             _settings = Settings.Load();
 
+            // Determine if we should spawn the window below the player (e.g. if taskbar is at the top of the screen)
+            double dpiScale = 1.0;
+            if (System.Windows.Application.Current.MainWindow != null)
+            {
+                try
+                {
+                    dpiScale = VisualTreeHelper.GetDpi(System.Windows.Application.Current.MainWindow).PixelsPerDip;
+                }
+                catch { }
+            }
+            double physY = (originRect.Top + originRect.Height / 2) * dpiScale;
+            var screen = System.Windows.Forms.Screen.FromPoint(new System.Drawing.Point((int)((originRect.Left + originRect.Width / 2) * dpiScale), (int)physY));
+            _spawnBelow = physY < (screen.Bounds.Top + screen.Bounds.Height / 2);
+
             // Set initial window width and height based on mode
             var isExpert = _settings.ExpertMode;
             var initialHeight = isExpert ? 796 : 454;
             this.Width = 704;
             this.Height = initialHeight;
 
-            // Spawn window to the left and slightly above the button
-            // typical width is 704, bottom is originRect.Top - 15
+            // Spawn window to the left and either above or below the player window
             this.Left = originRect.Right - 704;
-            this.Top = originRect.Top - initialHeight - 15;
+            if (_spawnBelow)
+            {
+                this.Top = originRect.Bottom + 15;
+            }
+            else
+            {
+                this.Top = originRect.Top - initialHeight - 15;
+            }
 
             Loaded += OnLoaded;
         }
@@ -157,9 +178,17 @@ namespace TaskbarMiniPlayer
             var targetHeight = expert ? 796.0 : 454.0;
             var currentHeight = this.Height;
 
-            // Anchor the bottom of the window
-            var bottomY = _originRect.Top - 15;
-            var targetTop = bottomY - targetHeight;
+            // Anchor the bottom or top of the window depending on taskbar position
+            double targetTop;
+            if (_spawnBelow)
+            {
+                targetTop = _originRect.Bottom + 15;
+            }
+            else
+            {
+                var bottomY = _originRect.Top - 15;
+                targetTop = bottomY - targetHeight;
+            }
 
             if (expert)
             {
