@@ -27,8 +27,8 @@ namespace TaskbarMiniPlayer
         public bool EnableVolumeSlider { get; set; } = false;
         public bool ScrollLongText { get; set; } = true;
         public bool HideArtist { get; set; } = false;
-        public bool EnableDynamicSizing { get; set; } = false;
-        public bool EnableSmartResize { get; set; } = false;
+        public bool EnableDynamicSizing { get; set; } = true;
+        public bool EnableSmartResize { get; set; } = true;
         public bool HideBorder { get; set; } = false;
         public BorderMode BorderMode { get; set; } = BorderMode.Static;
         public TimelineStyle TimelineStyle { get; set; } = TimelineStyle.Default;
