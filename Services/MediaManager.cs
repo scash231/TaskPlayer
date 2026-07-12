@@ -5,9 +5,28 @@ using Windows.Media.Control;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.IO;
+using System.Collections.Generic;
 
 namespace TaskbarMiniPlayer
 {
+    public class MediaTimelineInfo
+    {
+        public TimeSpan EndTime { get; set; }
+        public TimeSpan Position { get; set; }
+        public DateTimeOffset LastUpdatedTime { get; set; }
+    }
+
+    public class SimulatedSession
+    {
+        public string SourceApp { get; set; } = "Mock App";
+        public string Title { get; set; } = "Simulated Song";
+        public string Artist { get; set; } = "Simulated Artist";
+        public bool IsPlaying { get; set; } = false;
+        public double DurationSeconds { get; set; } = 180;
+        public double PositionSeconds { get; set; } = 30;
+        public DateTimeOffset LastUpdatedTime { get; set; } = DateTimeOffset.UtcNow;
+    }
+
     public class MediaManager
     {
         private GlobalSystemMediaTransportControlsSessionManager? _sessionManager;
@@ -17,13 +36,41 @@ namespace TaskbarMiniPlayer
 
         public event Action? MediaStateChanged;
 
-        public int TotalSessions => _allSessions?.Count ?? 0;
-        public int CurrentSessionIndex => _currentSessionIndex;
+        // Simulation state
+        public bool IsSimulationEnabled { get; set; }
+        public List<SimulatedSession> SimulatedSessions { get; } = new();
+        public int SimulatedCurrentSessionIndex { get; set; }
 
-        public bool IsPlaying { get; private set; }
-        public string Title { get; private set; } = "";
-        public string Artist { get; private set; } = "";
-        public ImageSource? AlbumArt { get; private set; }
+        public int TotalSessions => IsSimulationEnabled ? SimulatedSessions.Count : (_allSessions?.Count ?? 0);
+        public int CurrentSessionIndex => IsSimulationEnabled ? SimulatedCurrentSessionIndex : _currentSessionIndex;
+
+        private bool _isPlaying;
+        public bool IsPlaying
+        {
+            get => IsSimulationEnabled ? (SimulatedSessions.Count > SimulatedCurrentSessionIndex && SimulatedCurrentSessionIndex >= 0 ? SimulatedSessions[SimulatedCurrentSessionIndex].IsPlaying : false) : _isPlaying;
+            private set => _isPlaying = value;
+        }
+
+        private string _title = "";
+        public string Title
+        {
+            get => IsSimulationEnabled ? (SimulatedSessions.Count > SimulatedCurrentSessionIndex && SimulatedCurrentSessionIndex >= 0 ? SimulatedSessions[SimulatedCurrentSessionIndex].Title : "") : _title;
+            private set => _title = value;
+        }
+
+        private string _artist = "";
+        public string Artist
+        {
+            get => IsSimulationEnabled ? (SimulatedSessions.Count > SimulatedCurrentSessionIndex && SimulatedCurrentSessionIndex >= 0 ? SimulatedSessions[SimulatedCurrentSessionIndex].Artist : "") : _artist;
+            private set => _artist = value;
+        }
+
+        private ImageSource? _albumArt;
+        public ImageSource? AlbumArt
+        {
+            get => IsSimulationEnabled ? null : _albumArt;
+            private set => _albumArt = value;
+        }
 
         public async Task InitializeAsync()
         {
@@ -101,6 +148,16 @@ namespace TaskbarMiniPlayer
 
         public void SwitchSession(int offset)
         {
+            if (IsSimulationEnabled)
+            {
+                if (SimulatedSessions.Count <= 1) return;
+                SimulatedCurrentSessionIndex += offset;
+                if (SimulatedCurrentSessionIndex < 0) SimulatedCurrentSessionIndex = SimulatedSessions.Count - 1;
+                if (SimulatedCurrentSessionIndex >= SimulatedSessions.Count) SimulatedCurrentSessionIndex = 0;
+                MediaStateChanged?.Invoke();
+                return;
+            }
+
             if (_allSessions == null || _allSessions.Count <= 1) return;
 
             _currentSessionIndex += offset;
@@ -192,6 +249,19 @@ namespace TaskbarMiniPlayer
 
         public async Task PlayPauseAsync()
         {
+            if (IsSimulationEnabled)
+            {
+                if (SimulatedSessions.Count > SimulatedCurrentSessionIndex && SimulatedCurrentSessionIndex >= 0)
+                {
+                    var session = SimulatedSessions[SimulatedCurrentSessionIndex];
+                    session.IsPlaying = !session.IsPlaying;
+                    session.LastUpdatedTime = DateTimeOffset.UtcNow;
+                    MediaStateChanged?.Invoke();
+                }
+                await Task.CompletedTask;
+                return;
+            }
+
             if (_currentSession != null)
             {
                 if (IsPlaying)
@@ -203,6 +273,13 @@ namespace TaskbarMiniPlayer
 
         public async Task SkipPreviousAsync()
         {
+            if (IsSimulationEnabled)
+            {
+                SwitchSession(-1);
+                await Task.CompletedTask;
+                return;
+            }
+
             if (_currentSession != null)
             {
                 await _currentSession.TrySkipPreviousAsync();
@@ -211,17 +288,46 @@ namespace TaskbarMiniPlayer
 
         public async Task SkipNextAsync()
         {
+            if (IsSimulationEnabled)
+            {
+                SwitchSession(1);
+                await Task.CompletedTask;
+                return;
+            }
+
             if (_currentSession != null)
             {
                 await _currentSession.TrySkipNextAsync();
             }
         }
 
-        public Windows.Media.Control.GlobalSystemMediaTransportControlsSessionTimelineProperties? GetTimelineProperties()
+        public MediaTimelineInfo? GetTimelineProperties()
         {
+            if (IsSimulationEnabled)
+            {
+                if (SimulatedSessions.Count > SimulatedCurrentSessionIndex && SimulatedCurrentSessionIndex >= 0)
+                {
+                    var session = SimulatedSessions[SimulatedCurrentSessionIndex];
+                    return new MediaTimelineInfo
+                    {
+                        EndTime = TimeSpan.FromSeconds(session.DurationSeconds),
+                        Position = TimeSpan.FromSeconds(session.PositionSeconds),
+                        LastUpdatedTime = session.LastUpdatedTime
+                    };
+                }
+                return null;
+            }
+
             try
             {
-                return _currentSession?.GetTimelineProperties();
+                var original = _currentSession?.GetTimelineProperties();
+                if (original == null) return null;
+                return new MediaTimelineInfo
+                {
+                    EndTime = original.EndTime,
+                    Position = original.Position,
+                    LastUpdatedTime = original.LastUpdatedTime
+                };
             }
             catch
             {
@@ -231,6 +337,25 @@ namespace TaskbarMiniPlayer
 
         public double GetTimelineProgress()
         {
+            if (IsSimulationEnabled)
+            {
+                if (SimulatedSessions.Count > SimulatedCurrentSessionIndex && SimulatedCurrentSessionIndex >= 0)
+                {
+                    var session = SimulatedSessions[SimulatedCurrentSessionIndex];
+                    if (session.DurationSeconds <= 0) return 0;
+                    double pos = session.PositionSeconds;
+                    if (session.IsPlaying)
+                    {
+                        var timeSinceUpdate = DateTimeOffset.UtcNow - session.LastUpdatedTime;
+                        if (timeSinceUpdate.TotalMilliseconds < 0) timeSinceUpdate = TimeSpan.Zero;
+                        pos += timeSinceUpdate.TotalSeconds;
+                        if (pos > session.DurationSeconds) pos = session.DurationSeconds;
+                    }
+                    return pos / session.DurationSeconds;
+                }
+                return 0;
+            }
+
             if (_currentSession == null) return 0;
             try
             {
@@ -256,6 +381,11 @@ namespace TaskbarMiniPlayer
             {
                 return 0;
             }
+        }
+
+        public void TriggerMediaStateChanged()
+        {
+            MediaStateChanged?.Invoke();
         }
     }
 }
