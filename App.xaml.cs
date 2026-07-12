@@ -46,8 +46,18 @@ namespace TaskbarMiniPlayer
 
                 var contextMenu = new ContextMenuStrip();
                 contextMenu.Items.Add("Settings...", null, (s, args) => ShowSettings());
+
+                var translucentIcoItem = new ToolStripMenuItem("TranslucentICO Settings...", null, (s, args) => ShowTranslucentIcoSettings());
+                contextMenu.Items.Add(translucentIcoItem);
+
                 contextMenu.Items.Add(new ToolStripSeparator());
                 contextMenu.Items.Add("Exit", null, (s, args) => Shutdown());
+
+                contextMenu.Opening += (s, args) =>
+                {
+                    var settings = Settings.Load();
+                    translucentIcoItem.Visible = settings.EnableTranslucentIco;
+                };
 
                 _notifyIcon.ContextMenuStrip = contextMenu;
                 _notifyIcon.DoubleClick += (s, args) => ShowSettings();
