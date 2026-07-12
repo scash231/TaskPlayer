@@ -706,7 +706,7 @@
                                         </Grid>
                                         <Grid Margin="0,4">
                                             <StackPanel VerticalAlignment="Center">
-                                                <TextBlock Text="Enable TranslucentICO" FontSize="12" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
+                                                <TextBlock Text="Enable TranslucentICO [BETA]" FontSize="12" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
                                                 <TextBlock Text="Enable middle-click shortcut to adjust desktop icon opacity" FontSize="9.5" Foreground="{DynamicResource TextSec}" Opacity="0.7"/>
                                             </StackPanel>
                                             <CheckBox x:Name="ChkEnableTranslucentIco" Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
