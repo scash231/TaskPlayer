@@ -7,6 +7,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using TaskbarMiniPlayer.Animations;
+using TaskbarMiniPlayer.Views;
 
 using ComboBox = System.Windows.Controls.ComboBox;
 using Button = System.Windows.Controls.Button;
@@ -93,7 +94,6 @@ namespace TaskbarMiniPlayer
             // General
             ChkStartup.IsChecked = s.LaunchOnStartup;
             ChkAutoPlayOnLaunch.IsChecked = s.AutoPlayOnLaunch;
-            ChkKeepTopmost.IsChecked = s.KeepTopmost;
             ChkShowPlayer.IsChecked = s.ShowPlayer;
             ChkVolumeSlider.IsChecked = s.EnableVolumeSlider;
 
@@ -494,7 +494,6 @@ namespace TaskbarMiniPlayer
         {
             _settings.LaunchOnStartup = ChkStartup.IsChecked == true;
             _settings.AutoPlayOnLaunch = ChkAutoPlayOnLaunch.IsChecked == true;
-            _settings.KeepTopmost = ChkKeepTopmost.IsChecked == true;
             _settings.ShowPlayer = ChkShowPlayer.IsChecked == true;
             _settings.EnableVolumeSlider = ChkVolumeSlider.IsChecked == true;
             _settings.AutoHideSeconds = (int)SldAutoHide.Value;
@@ -565,6 +564,21 @@ namespace TaskbarMiniPlayer
             {
                 mainWindow.ReloadSettings();
             }
+        }
+
+        private void OpenDevWindow()
+        {
+            foreach (Window window in System.Windows.Application.Current.Windows)
+            {
+                if (window is DevWindow)
+                {
+                    window.Activate();
+                    return;
+                }
+            }
+
+            var devWin = new DevWindow();
+            devWin.Show();
         }
 
         private void Save_Click(object sender, RoutedEventArgs e)
@@ -822,6 +836,14 @@ namespace TaskbarMiniPlayer
                 Resources["Accent"] = new SolidColorBrush(color);
             }
             catch { }
+        }
+
+        private void TxtSettingsTitle_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ClickCount == 2)
+            {
+                OpenDevWindow();
+            }
         }
     }
 }
