@@ -19,6 +19,7 @@ namespace TaskbarMiniPlayer
     public partial class MainWindow : Window
     {
         private readonly MediaManager _mediaManager;
+        public MediaManager MediaManagerInstance => _mediaManager;
         private Settings _settings;
         private IntPtr _winEventHook;
         private Win32.WinEventDelegate _winEventDelegate;
@@ -48,11 +49,11 @@ namespace TaskbarMiniPlayer
             _autoHideTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
             _autoHideTimer.Tick += AutoHideTimer_Tick;
 
-            _zOrderTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
+            _zOrderTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(_settings.TopmostIntervalMs) };
             _zOrderTimer.Tick += (s, e) => 
             {
                 EnforceZOrder();
-                Reposition(true);
+                Reposition();
             };
             _zOrderTimer.Start();
 
@@ -60,7 +61,7 @@ namespace TaskbarMiniPlayer
             _timelineTimer.Tick += TimelineTimer_Tick;
 
             _peakMeterTimer = new DispatcherTimer(DispatcherPriority.Render);
-            _peakMeterTimer.Interval = TimeSpan.FromMilliseconds(30);
+            _peakMeterTimer.Interval = TimeSpan.FromMilliseconds(_settings.PeakMeterIntervalMs);
             _peakMeterTimer.Tick += PeakMeterTimer_Tick;
  
             MainBorder.SizeChanged += (s, e) => UpdateTimelineBorder(false);
@@ -92,15 +93,7 @@ namespace TaskbarMiniPlayer
             }
             if (Visibility == Visibility.Visible)
             {
-                if (_settings.KeepTopmost)
-                {
-                    Win32.SetWindowPos(hwnd, Win32.HWND_NOTOPMOST, 0, 0, 0, 0, Win32.SWP_NOMOVE | Win32.SWP_NOSIZE | Win32.SWP_NOACTIVATE);
-                    Win32.SetWindowPos(hwnd, Win32.HWND_TOPMOST, 0, 0, 0, 0, Win32.SWP_NOMOVE | Win32.SWP_NOSIZE | Win32.SWP_NOACTIVATE);
-                }
-                else
-                {
-                    Win32.SetWindowPos(hwnd, Win32.HWND_NOTOPMOST, 0, 0, 0, 0, Win32.SWP_NOMOVE | Win32.SWP_NOSIZE | Win32.SWP_NOACTIVATE);
-                }
+                Win32.SetWindowPos(hwnd, Win32.HWND_TOPMOST, 0, 0, 0, 0, Win32.SWP_NOMOVE | Win32.SWP_NOSIZE | Win32.SWP_NOACTIVATE);
             }
         }
 
@@ -140,8 +133,6 @@ namespace TaskbarMiniPlayer
             _source = HwndSource.FromHwnd(hwnd);
             _source?.AddHook(HwndHook);
  
-            Deactivated += Window_Deactivated;
-
             _winEventHook = Win32.SetWinEventHook(Win32.EVENT_OBJECT_LOCATIONCHANGE, Win32.EVENT_OBJECT_LOCATIONCHANGE, IntPtr.Zero, _winEventDelegate, 0, 0, Win32.WINEVENT_OUTOFCONTEXT);
 
             await _mediaManager.InitializeAsync();
@@ -216,6 +207,15 @@ namespace TaskbarMiniPlayer
                     TranslucentIcoService.SetDesktopIconOpacity(255, translucentSettings.Layer);
                 }
                 catch { }
+            }
+
+            if (_zOrderTimer != null)
+            {
+                _zOrderTimer.Interval = TimeSpan.FromMilliseconds(_settings.TopmostIntervalMs);
+            }
+            if (_peakMeterTimer != null)
+            {
+                _peakMeterTimer.Interval = TimeSpan.FromMilliseconds(_settings.PeakMeterIntervalMs);
             }
         }
 
@@ -591,7 +591,7 @@ namespace TaskbarMiniPlayer
             var taskbar = Win32.FindWindow("Shell_TrayWnd", null);
             if (hwnd == taskbar)
             {
-                Dispatcher.InvokeAsync(() => Reposition(true));
+                Dispatcher.InvokeAsync(() => Reposition());
             }
         }
 
@@ -599,7 +599,7 @@ namespace TaskbarMiniPlayer
         {
             if (_zOrderTimer != null)
             {
-                _zOrderTimer.Interval = _settings.OptimizeTimerFrequencies ? TimeSpan.FromMilliseconds(2000) : TimeSpan.FromMilliseconds(500);
+                _zOrderTimer.Interval = TimeSpan.FromMilliseconds(_settings.TopmostIntervalMs);
             }
             if (_timelineTimer != null)
             {
@@ -937,6 +937,29 @@ namespace TaskbarMiniPlayer
         {
             if (_wasHiddenForFullscreen) return;
 
+            var taskbar = Win32.FindWindow("Shell_TrayWnd", null);
+            if (taskbar == IntPtr.Zero) return;
+
+            var helper = new WindowInteropHelper(this);
+            var hwnd = helper.Handle;
+            if (hwnd == IntPtr.Zero) return;
+
+            try
+            {
+                if (helper.Owner != taskbar)
+                {
+                    helper.Owner = taskbar;
+                }
+            }
+            catch 
+            {
+                try
+                {
+                    Win32.SetWindowLongPtr(hwnd, Win32.GWL_HWNDPARENT, taskbar);
+                }
+                catch { }
+            }
+
             if (_settings.EnableSmartResize && IsLoaded)
             {
                 double targetW = CalculateTargetWidth();
@@ -956,7 +979,30 @@ namespace TaskbarMiniPlayer
                 }
             }
 
-            TaskbarHelper.RepositionWindow(this, _settings, _mediaManager, Width, forceZOrder, _wasHiddenForFullscreen, _isAutoHidden);
+            Win32.GetWindowRect(taskbar, out var tbRect);
+            var trayWnd = Win32.FindWindowEx(taskbar, IntPtr.Zero, "TrayNotifyWnd", null);
+
+            int myW = (int)Width;
+            int myH = (int)Height;
+            int xPos = tbRect.Right - myW - 350; // Fallback position
+
+            if (trayWnd != IntPtr.Zero)
+            {
+                Win32.GetWindowRect(trayWnd, out var trayRect);
+                xPos = trayRect.Left - myW - _settings.ButtonGap;
+            }
+
+            xPos += _settings.XOffset;
+
+            int yPos = tbRect.Top + (tbRect.Height - myH) / 2;
+            yPos += _settings.YOffset;
+
+            if (_settings.ShowPlayer && !_isAutoHidden && Visibility != Visibility.Visible)
+            {
+                Show();
+            }
+
+            Win32.SetWindowPos(hwnd, Win32.HWND_TOPMOST, xPos, yPos, myW, myH, Win32.SWP_NOACTIVATE | Win32.SWP_SHOWWINDOW);
         }
 
         private void RepositionVolumePopup()
@@ -1045,6 +1091,19 @@ namespace TaskbarMiniPlayer
             }
         }
 
+        private bool IsTaskbarAtTop()
+        {
+            var taskbar = Win32.FindWindow("Shell_TrayWnd", null);
+            if (taskbar != IntPtr.Zero)
+            {
+                if (Win32.GetWindowRect(taskbar, out var tbRect))
+                {
+                    return tbRect.Top <= 0 && tbRect.Bottom > 0 && (tbRect.Right - tbRect.Left) > (tbRect.Bottom - tbRect.Top);
+                }
+            }
+            return false;
+        }
+
         private void OpenVolumePopup()
         {
             if (VolumePopup.IsOpen) return;
@@ -1053,6 +1112,10 @@ namespace TaskbarMiniPlayer
                 UpdateVolumeUI(_audioDevice.AudioEndpointVolume.MasterVolumeLevelScalar);
             }
 
+            bool isTop = IsTaskbarAtTop();
+            VolumePopup.Placement = isTop ? System.Windows.Controls.Primitives.PlacementMode.Bottom : System.Windows.Controls.Primitives.PlacementMode.Top;
+            VolumePopup.VerticalOffset = isTop ? 8 : -8;
+
             VolumePopup.IsOpen = true;
             VolumePopupGrid.IsHitTestVisible = true;
 
@@ -1060,10 +1123,11 @@ namespace TaskbarMiniPlayer
             var springDur = TimeSpan.FromMilliseconds(400);
 
             var fadeIn = new DoubleAnimation(0, 1, fadeDur);
-            var slideUp = new DoubleAnimation(20, 0, springDur) { EasingFunction = new Animations.AppleSpringEase(0.8, 0.4) };
+            double startY = isTop ? -20 : 20;
+            var slide = new DoubleAnimation(startY, 0, springDur) { EasingFunction = new Animations.AppleSpringEase(0.8, 0.4) };
 
             VolumePopupGrid.BeginAnimation(OpacityProperty, fadeIn);
-            VolumePopupTranslate.BeginAnimation(TranslateTransform.YProperty, slideUp);
+            VolumePopupTranslate.BeginAnimation(TranslateTransform.YProperty, slide);
 
             if (!_settings.DisableVisualizer)
             {
@@ -1128,8 +1192,8 @@ namespace TaskbarMiniPlayer
 
             var rect = new Rect(this.Left, this.Top, this.Width, this.Height);
             var sw = new SettingsWindow(rect);
-            sw.ShowDialog();
-            ReloadSettings();
+            sw.Closed += (s, ev) => ReloadSettings();
+            sw.Show();
         }
 
         private void ToggleLayout()
@@ -1160,7 +1224,7 @@ namespace TaskbarMiniPlayer
 
             var rect = new Rect(this.Left, this.Top, this.Width, this.Height);
             var tw = new TranslucentIcoWindow(rect);
-            tw.ShowDialog();
+            tw.Show();
         }
 
         private void MainBorder_MouseWheel(object sender, MouseWheelEventArgs e)
@@ -1280,21 +1344,6 @@ namespace TaskbarMiniPlayer
                 VolumeIconScale.ScaleY = newScale;
             }
             catch { }
-        }
-
-
-
-        private void Window_Deactivated(object? sender, EventArgs e)
-        {
-            if (_settings.KeepTopmost && Visibility == Visibility.Visible)
-            {
-                var hwnd = new WindowInteropHelper(this).Handle;
-                if (hwnd != IntPtr.Zero)
-                {
-                    Win32.SetWindowPos(hwnd, Win32.HWND_NOTOPMOST, 0, 0, 0, 0, Win32.SWP_NOMOVE | Win32.SWP_NOSIZE | Win32.SWP_NOACTIVATE);
-                    Win32.SetWindowPos(hwnd, Win32.HWND_TOPMOST, 0, 0, 0, 0, Win32.SWP_NOMOVE | Win32.SWP_NOSIZE | Win32.SWP_NOACTIVATE);
-                }
-            }
         }
 
 
