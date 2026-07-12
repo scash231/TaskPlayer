@@ -8,7 +8,7 @@ Tiny media controls that sit right on your Windows taskbar. Previous, play/pause
 <img width="415" height="49" alt="Screenshot 2026-07-10 213612" src="https://github.com/user-attachments/assets/40a968cd-d576-437f-b34e-f07fa2d28ac9" />
 <img width="465" height="47" alt="Screenshot 2026-07-10 213604" src="https://github.com/user-attachments/assets/08103773-af3c-4f4c-827a-10c477370a31" />
 <img width="507" height="48" alt="Screenshot 2026-07-10 213535" src="https://github.com/user-attachments/assets/7ec11276-7d08-4af5-9fd3-140fad956331" />
-
+<img width="689" height="430" alt="Screenshot 2026-07-12 163452" src="https://github.com/user-attachments/assets/c26f37d3-fd36-4137-a67e-630d3ce2fc0e" />
 
 ## Core Features
 - Prev / Play-Pause / Next buttons on the taskbar
