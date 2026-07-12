@@ -21,6 +21,22 @@ namespace TaskbarMiniPlayer
                 return;
             }
 
+            // Check for side taskbar (vertical)
+            var taskbar = Win32.FindWindow("Shell_TrayWnd", null);
+            if (taskbar != IntPtr.Zero && Win32.GetWindowRect(taskbar, out var tbRect))
+            {
+                bool isVertical = (tbRect.Bottom - tbRect.Top) > (tbRect.Right - tbRect.Left);
+                if (isVertical)
+                {
+                    var errorWin = new TaskbarMiniPlayer.Views.TaskbarErrorWindow();
+                    errorWin.ShowDialog();
+                    _singleInstanceMutex.ReleaseMutex();
+                    _singleInstanceMutex.Dispose();
+                    Shutdown();
+                    return;
+                }
+            }
+
             base.OnStartup(e);
 
             try
@@ -97,8 +113,8 @@ namespace TaskbarMiniPlayer
 
                 var rect = new System.Windows.Rect(_mainWindow.Left, _mainWindow.Top, _mainWindow.Width, _mainWindow.Height);
                 var settingsWindow = new SettingsWindow(rect);
-                settingsWindow.ShowDialog();
-                _mainWindow.ReloadSettings();
+                settingsWindow.Closed += (s, ev) => _mainWindow.ReloadSettings();
+                settingsWindow.Show();
             }
         }
 
@@ -119,7 +135,7 @@ namespace TaskbarMiniPlayer
 
                 var rect = new System.Windows.Rect(_mainWindow.Left, _mainWindow.Top, _mainWindow.Width, _mainWindow.Height);
                 var translucentIcoWindow = new TranslucentIcoWindow(rect);
-                translucentIcoWindow.ShowDialog();
+                translucentIcoWindow.Show();
             }
         }
 
