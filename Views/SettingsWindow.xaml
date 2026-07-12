@@ -6,7 +6,7 @@
         Title="Settings" Width="704" Height="454"
         WindowStyle="None" AllowsTransparency="True"
         Background="Transparent" ResizeMode="NoResize"
-        WindowStartupLocation="Manual">
+        WindowStartupLocation="Manual" Topmost="True">
  
     <Window.Resources>
         <SolidColorBrush x:Key="BgDeep" Color="#151515"/>
@@ -643,7 +643,7 @@
                     <Border Grid.Row="0" Background="Transparent" MouseLeftButtonDown="TitleBar_Drag">
                         <Grid Margin="16,0">
                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                               <TextBlock Text="Settings" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}"/>
+                               <TextBlock x:Name="TxtSettingsTitle" Text="Settings" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" MouseLeftButtonDown="TxtSettingsTitle_MouseLeftButtonDown" Background="Transparent" Cursor="Hand"/>
                            </StackPanel>
                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
@@ -1148,15 +1148,7 @@
                                     <TextBlock Text="ADVANCED AESTHETICS" FontSize="10.5" FontWeight="Bold" Foreground="{DynamicResource Accent}" Margin="4,8,4,8"/>
                                     <Border Background="#0CFFFFFF" BorderBrush="#18FFFFFF" BorderThickness="0.5" CornerRadius="12" Margin="0,0,0,16">
                                         <StackPanel>
-                                            <Border Padding="14,12" BorderBrush="#10FFFFFF" BorderThickness="0,0,0,0.5">
-                                                <Grid>
-                                                    <StackPanel VerticalAlignment="Center" Margin="0,0,50,0">
-                                                        <TextBlock Text="Keep Player Topmost" FontSize="12.5" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
-                                                        <TextBlock Text="Ensure the player stays above other windows" FontSize="10" Foreground="{DynamicResource TextSec}" Opacity="0.7" Margin="0,2,0,0"/>
-                                                    </StackPanel>
-                                                    <CheckBox x:Name="ChkKeepTopmost" Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
-                                                </Grid>
-                                            </Border>
+
                                             <Border Padding="14,12" BorderBrush="#10FFFFFF" BorderThickness="0,0,0,0.5">
                                                 <Grid>
                                                     <StackPanel VerticalAlignment="Center" Margin="0,0,50,0">
