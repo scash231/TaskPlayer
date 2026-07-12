@@ -1,0 +1,343 @@
+<Window x:Class="TaskbarMiniPlayer.Views.DevWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="" Width="600" Height="680"
+        WindowStartupLocation="CenterScreen" ShowInTaskbar="True" Topmost="True" ResizeMode="CanResize">
+
+    <Grid Background="#F0F0F0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Background="#E5E5E5" Padding="15" BorderBrush="#CCCCCC" BorderThickness="0,0,0,1">
+            <Grid>
+                <TextBlock Text="Dev Panel" FontSize="16" FontWeight="Bold" VerticalAlignment="Center"/>
+                <Button Content="Reset to Default" HorizontalAlignment="Right" Click="ResetAllSettings_Click" Padding="10,5"/>
+            </Grid>
+        </Border>
+
+        <TabControl Grid.Row="1" Background="Transparent" BorderThickness="0,1,0,0" BorderBrush="#CCCCCC">
+            <!-- Settings Tab -->
+            <TabItem Header="Settings" Padding="12,5">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Margin="15">
+                        
+                        <!-- Timing & Performance -->
+                        <GroupBox Header="Timing &amp; Performance" Margin="0,0,0,15" Padding="10">
+                            <StackPanel>
+                                <!-- Topmost Interval -->
+                                <Grid Margin="0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="180"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="70"/>
+                                        <ColumnDefinition Width="65"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="Topmost Interval (ms):" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                    <Slider Grid.Column="1" x:Name="SldTopmostInterval" Minimum="0" Maximum="5000" VerticalAlignment="Center" ValueChanged="SldTopmostInterval_ValueChanged"/>
+                                    <TextBox Grid.Column="2" x:Name="TxtTopmostInterval" VerticalAlignment="Center" Margin="5,0" TextAlignment="Right" TextChanged="TxtTopmostInterval_TextChanged"/>
+                                    <Button Grid.Column="3" Content="Default" Click="ResetTopmostInterval_Click" Padding="4,2" FontSize="11" Margin="2,0"/>
+                                </Grid>
+
+                                <!-- Peak Meter Interval -->
+                                <Grid Margin="0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="180"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="70"/>
+                                        <ColumnDefinition Width="65"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="Peak Meter Interval (ms):" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                    <Slider Grid.Column="1" x:Name="SldPeakMeterInterval" Minimum="0" Maximum="1000" VerticalAlignment="Center" ValueChanged="SldPeakMeterInterval_ValueChanged"/>
+                                    <TextBox Grid.Column="2" x:Name="TxtPeakMeterInterval" VerticalAlignment="Center" Margin="5,0" TextAlignment="Right" TextChanged="TxtPeakMeterInterval_TextChanged"/>
+                                    <Button Grid.Column="3" Content="Default" Click="ResetPeakMeterInterval_Click" Padding="4,2" FontSize="11" Margin="2,0"/>
+                                </Grid>
+
+                                <!-- Text Scroll Speed -->
+                                <Grid Margin="0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="180"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="70"/>
+                                        <ColumnDefinition Width="65"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="Text Scroll Speed:" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                    <Slider Grid.Column="1" x:Name="SldScrollSpeed" Minimum="0" Maximum="500" VerticalAlignment="Center" ValueChanged="SldScrollSpeed_ValueChanged"/>
+                                    <TextBox Grid.Column="2" x:Name="TxtScrollSpeed" VerticalAlignment="Center" Margin="5,0" TextAlignment="Right" TextChanged="TxtScrollSpeed_TextChanged"/>
+                                    <Button Grid.Column="3" Content="Default" Click="ResetScrollSpeed_Click" Padding="4,2" FontSize="11" Margin="2,0"/>
+                                </Grid>
+
+                                <!-- Text Scroll Delay -->
+                                <Grid Margin="0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="180"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="70"/>
+                                        <ColumnDefinition Width="65"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="Text Scroll Delay (s):" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                    <Slider Grid.Column="1" x:Name="SldScrollDelay" Minimum="0" Maximum="10" VerticalAlignment="Center" ValueChanged="SldScrollDelay_ValueChanged"/>
+                                    <TextBox Grid.Column="2" x:Name="TxtScrollDelay" VerticalAlignment="Center" Margin="5,0" TextAlignment="Right" TextChanged="TxtScrollDelay_TextChanged"/>
+                                    <Button Grid.Column="3" Content="Default" Click="ResetScrollDelay_Click" Padding="4,2" FontSize="11" Margin="2,0"/>
+                                </Grid>
+
+                                <!-- Auto-Hide Delay -->
+                                <Grid Margin="0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="180"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="70"/>
+                                        <ColumnDefinition Width="65"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="Auto-Hide Delay (s):" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                    <Slider Grid.Column="1" x:Name="SldAutoHide" Minimum="0" Maximum="600" VerticalAlignment="Center" ValueChanged="SldAutoHide_ValueChanged"/>
+                                    <TextBox Grid.Column="2" x:Name="TxtAutoHide" VerticalAlignment="Center" Margin="5,0" TextAlignment="Right" TextChanged="TxtAutoHide_TextChanged"/>
+                                    <Button Grid.Column="3" Content="Default" Click="ResetAutoHide_Click" Padding="4,2" FontSize="11" Margin="2,0"/>
+                                </Grid>
+                            </StackPanel>
+                        </GroupBox>
+
+                        <!-- Style & Sizing -->
+                        <GroupBox Header="Style &amp; Sizing" Margin="0,0,0,15" Padding="10">
+                            <StackPanel>
+                                <!-- Background Opacity -->
+                                <Grid Margin="0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="180"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="70"/>
+                                        <ColumnDefinition Width="65"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="Background Opacity (0-1):" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                    <Slider Grid.Column="1" x:Name="SldBackgroundOpacity" Minimum="0" Maximum="1" VerticalAlignment="Center" ValueChanged="SldBackgroundOpacity_ValueChanged"/>
+                                    <TextBox Grid.Column="2" x:Name="TxtBackgroundOpacity" VerticalAlignment="Center" Margin="5,0" TextAlignment="Right" TextChanged="TxtBackgroundOpacity_TextChanged"/>
+                                    <Button Grid.Column="3" Content="Default" Click="ResetBackgroundOpacity_Click" Padding="4,2" FontSize="11" Margin="2,0"/>
+                                </Grid>
+
+                                <!-- Adaptive Tint Strength -->
+                                <Grid Margin="0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="180"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="70"/>
+                                        <ColumnDefinition Width="65"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="Tint Strength (0-1):" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                    <Slider Grid.Column="1" x:Name="SldAdaptiveTintStrength" Minimum="0" Maximum="1" VerticalAlignment="Center" ValueChanged="SldAdaptiveTintStrength_ValueChanged"/>
+                                    <TextBox Grid.Column="2" x:Name="TxtAdaptiveTintStrength" VerticalAlignment="Center" Margin="5,0" TextAlignment="Right" TextChanged="TxtAdaptiveTintStrength_TextChanged"/>
+                                    <Button Grid.Column="3" Content="Default" Click="ResetAdaptiveTintStrength_Click" Padding="4,2" FontSize="11" Margin="2,0"/>
+                                </Grid>
+
+                                <!-- Button Size -->
+                                <Grid Margin="0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="180"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="70"/>
+                                        <ColumnDefinition Width="65"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="Button Size (px):" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                    <Slider Grid.Column="1" x:Name="SldButtonSize" Minimum="0" Maximum="100" VerticalAlignment="Center" ValueChanged="SldButtonSize_ValueChanged"/>
+                                    <TextBox Grid.Column="2" x:Name="TxtButtonSize" VerticalAlignment="Center" Margin="5,0" TextAlignment="Right" TextChanged="TxtButtonSize_TextChanged"/>
+                                    <Button Grid.Column="3" Content="Default" Click="ResetButtonSize_Click" Padding="4,2" FontSize="11" Margin="2,0"/>
+                                </Grid>
+
+                                <!-- Button Gap -->
+                                <Grid Margin="0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="180"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="70"/>
+                                        <ColumnDefinition Width="65"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="Button Gap (px):" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                    <Slider Grid.Column="1" x:Name="SldButtonGap" Minimum="0" Maximum="50" VerticalAlignment="Center" ValueChanged="SldButtonGap_ValueChanged"/>
+                                    <TextBox Grid.Column="2" x:Name="TxtButtonGap" VerticalAlignment="Center" Margin="5,0" TextAlignment="Right" TextChanged="TxtButtonGap_TextChanged"/>
+                                    <Button Grid.Column="3" Content="Default" Click="ResetButtonGap_Click" Padding="4,2" FontSize="11" Margin="2,0"/>
+                                </Grid>
+
+                                <!-- X Offset -->
+                                <Grid Margin="0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="180"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="70"/>
+                                        <ColumnDefinition Width="65"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="X Offset (px):" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                    <Slider Grid.Column="1" x:Name="SldXOffset" Minimum="-1000" Maximum="1000" VerticalAlignment="Center" ValueChanged="SldXOffset_ValueChanged"/>
+                                    <TextBox Grid.Column="2" x:Name="TxtXOffset" VerticalAlignment="Center" Margin="5,0" TextAlignment="Right" TextChanged="TxtXOffset_TextChanged"/>
+                                    <Button Grid.Column="3" Content="Default" Click="ResetXOffset_Click" Padding="4,2" FontSize="11" Margin="2,0"/>
+                                </Grid>
+
+                                <!-- Y Offset -->
+                                <Grid Margin="0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="180"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="70"/>
+                                        <ColumnDefinition Width="65"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="Y Offset (px):" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                    <Slider Grid.Column="1" x:Name="SldYOffset" Minimum="-500" Maximum="500" VerticalAlignment="Center" ValueChanged="SldYOffset_ValueChanged"/>
+                                    <TextBox Grid.Column="2" x:Name="TxtYOffset" VerticalAlignment="Center" Margin="5,0" TextAlignment="Right" TextChanged="TxtYOffset_TextChanged"/>
+                                    <Button Grid.Column="3" Content="Default" Click="ResetYOffset_Click" Padding="4,2" FontSize="11" Margin="2,0"/>
+                                </Grid>
+                            </StackPanel>
+                        </GroupBox>
+
+                        <!-- Diagnostics -->
+                        <GroupBox Header="Diagnostics" Margin="0,0,0,15" Padding="10">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <TextBlock Grid.Row="0" x:Name="TxtTaskbarPos" Text="Taskbar Position: Unknown"/>
+                                <TextBlock Grid.Row="1" x:Name="TxtWindowPos" Text="Window Position: X=0, Y=0"/>
+                                <TextBlock Grid.Row="2" x:Name="TxtMemoryUsage" Text="Memory Usage: 0.0 MB"/>
+                                <TextBlock Grid.Row="3" x:Name="TxtActiveSessions" Text="Active Media Sessions: 0"/>
+                            </Grid>
+                        </GroupBox>
+
+                        <!-- Debug Actions -->
+                        <GroupBox Header="Utilities" Padding="10">
+                            <WrapPanel>
+                                <Button Content="GC.Collect" Click="ForceGC_Click"/>
+                                <Button Content="Toggle Topmost" Click="ToggleTopmost_Click"/>
+                                <Button Content="Reposition Player" Click="Reposition_Click"/>
+                                <Button Content="Open AppData Folder" Click="OpenSettingsFolder_Click"/>
+                            </WrapPanel>
+                        </GroupBox>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="Media Debug" Padding="12,5">
+                <Grid Margin="15">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Enable Simulation Checkbox -->
+                    <Border Grid.Row="0" Background="#E0E0E0" Padding="10" CornerRadius="4" Margin="0,0,0,15">
+                        <CheckBox x:Name="ChkSimulateMedia" Content="Enable Media Session Simulation (Overrides System SMTC)" 
+                                  FontWeight="Bold" Checked="ChkSimulateMedia_Changed" Unchecked="ChkSimulateMedia_Changed"/>
+                    </Border>
+
+                    <!-- Simulation Controls Area -->
+                    <Grid Grid.Row="1" x:Name="GridSimControls" IsEnabled="False">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- List & Management of Simulated Sessions -->
+                        <GroupBox Grid.Row="0" Header="Sessions Manager" Margin="0,0,0,15" Padding="10">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="2*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Active Simulated Sessions:" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                                    <ListBox x:Name="LstSimSessions" Height="90" SelectionChanged="LstSimSessions_SelectionChanged"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center">
+                                    <Button Content="Start New Session" Click="BtnStartSimSession_Click" Margin="0,2"/>
+                                    <Button Content="Exit Selected Session" Click="BtnExitSimSession_Click" Foreground="#FF6B6B" Margin="0,2"/>
+                                </StackPanel>
+                            </Grid>
+                        </GroupBox>
+
+                        <!-- Selected Session Controls -->
+                        <GroupBox Grid.Row="1" Header="Selected Session State Editor" Padding="10">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <StackPanel x:Name="StackSelectedSessionEditor" IsEnabled="False">
+                                    
+                                    <!-- Song Title -->
+                                    <Grid Margin="0,4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="120"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="Song Title:" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                        <TextBox Grid.Column="1" x:Name="TxtSimTitle" TextChanged="TxtSimTitle_TextChanged"/>
+                                    </Grid>
+
+                                    <!-- Artist -->
+                                    <Grid Margin="0,4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="120"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="Artist:" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                        <TextBox Grid.Column="1" x:Name="TxtSimArtist" TextChanged="TxtSimArtist_TextChanged"/>
+                                    </Grid>
+
+                                    <!-- App Source -->
+                                    <Grid Margin="0,4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="120"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="App Source (AppID):" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                        <TextBox Grid.Column="1" x:Name="TxtSimAppSource" TextChanged="TxtSimAppSource_TextChanged"/>
+                                    </Grid>
+
+                                    <!-- Playing Status -->
+                                    <Grid Margin="0,4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="120"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="Playback State:" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                        <CheckBox Grid.Column="1" x:Name="ChkSimIsPlaying" Content="Is Playing" VerticalAlignment="Center" Checked="ChkSimIsPlaying_Changed" Unchecked="ChkSimIsPlaying_Changed"/>
+                                    </Grid>
+
+                                    <!-- Track Duration -->
+                                    <Grid Margin="0,4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="120"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="80"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="Duration (seconds):" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                        <Slider Grid.Column="1" x:Name="SldSimDuration" Minimum="1" Maximum="600" VerticalAlignment="Center" ValueChanged="SldSimDuration_ValueChanged"/>
+                                        <TextBox Grid.Column="2" x:Name="TxtSimDuration" VerticalAlignment="Center" Margin="5,0" TextAlignment="Right" TextChanged="TxtSimDuration_TextChanged"/>
+                                    </Grid>
+
+                                    <!-- Track Position -->
+                                    <Grid Margin="0,4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="120"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="80"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="Position (seconds):" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                        <Slider Grid.Column="1" x:Name="SldSimPosition" Minimum="0" Maximum="600" VerticalAlignment="Center" ValueChanged="SldSimPosition_ValueChanged"/>
+                                        <TextBox Grid.Column="2" x:Name="TxtSimPosition" VerticalAlignment="Center" Margin="5,0" TextAlignment="Right" TextChanged="TxtSimPosition_TextChanged"/>
+                                    </Grid>
+
+                                    <Button Content="Apply State &amp; Trigger Event" Click="BtnApplySimState_Click" Margin="0,10,0,0" Padding="10,5" FontWeight="Bold"/>
+
+                                </StackPanel>
+                            </ScrollViewer>
+                        </GroupBox>
+                    </Grid>
+                </Grid>
+            </TabItem>
+        </TabControl>
+
+        <Border Grid.Row="2" Background="#E5E5E5" Padding="15" BorderBrush="#CCCCCC" BorderThickness="0,1,0,0">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="Close" Width="85" Height="25" Click="Close_Click"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>
