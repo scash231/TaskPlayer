@@ -6,7 +6,7 @@
         Title="TranslucentICO" Width="704" Height="454"
         WindowStyle="None" AllowsTransparency="True"
         Background="Transparent" ResizeMode="NoResize"
-        WindowStartupLocation="Manual">
+        WindowStartupLocation="Manual" Topmost="True">
 
     <Window.Resources>
         <SolidColorBrush x:Key="BgDeep" Color="#151515"/>
