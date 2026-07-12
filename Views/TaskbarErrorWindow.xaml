@@ -1,0 +1,83 @@
+<Window x:Class="TaskbarMiniPlayer.Views.TaskbarErrorWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Taskbar Position Unsupported" Width="420" Height="250"
+        WindowStyle="None" AllowsTransparency="True"
+        Background="Transparent" ResizeMode="NoResize"
+        WindowStartupLocation="CenterScreen" ShowInTaskbar="True" Topmost="True">
+
+    <Window.Resources>
+        <SolidColorBrush x:Key="BgDeep" Color="#151515"/>
+        <SolidColorBrush x:Key="BorderSub" Color="#2A2A2A"/>
+        <SolidColorBrush x:Key="Accent" Color="#FF3B30"/>
+        <SolidColorBrush x:Key="TextPrimary" Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="TextSec" Color="#AAAAAA"/>
+
+        <!-- Button style -->
+        <Style x:Key="ActionBtn" TargetType="Button">
+            <Setter Property="Background" Value="#1AFFFFFF"/>
+            <Setter Property="BorderBrush" Value="#15FFFFFF"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Padding" Value="16,8"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Border" CornerRadius="8" 
+                                Background="{TemplateBinding Background}" 
+                                BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="{TemplateBinding BorderThickness}" 
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="#25FFFFFF"/>
+                                <Setter TargetName="Border" Property="BorderBrush" Value="#20FFFFFF"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="#35FFFFFF"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Border CornerRadius="16" Background="{StaticResource BgDeep}"
+            BorderBrush="{StaticResource BorderSub}" BorderThickness="1"
+            Padding="24">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Title bar / Close Button -->
+            <Grid Grid.Row="0" Margin="0,0,0,16">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="⚠" FontSize="18" Foreground="{StaticResource Accent}" FontWeight="Bold" Margin="0,0,8,0"/>
+                    <TextBlock Text="Unsupported Taskbar Position" FontSize="14" FontWeight="Bold" Foreground="{StaticResource TextPrimary}"/>
+                </StackPanel>
+            </Grid>
+
+            <!-- Message Content -->
+            <StackPanel Grid.Row="1" VerticalAlignment="Center" Margin="0,0,0,16">
+                <TextBlock Text="The Windows taskbar is currently placed on the side of your screen."
+                           Foreground="{StaticResource TextPrimary}" FontSize="12.5" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                <TextBlock Text="TaskbarMiniPlayer is designed to run within a horizontal taskbar (top or bottom) and does not support vertical taskbar layouts."
+                           Foreground="{StaticResource TextSec}" FontSize="11.5" TextWrapping="Wrap" LineHeight="16"/>
+            </StackPanel>
+
+            <!-- Action Button -->
+            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="Exit Application" Style="{StaticResource ActionBtn}" Click="Exit_Click"/>
+            </StackPanel>
+        </Grid>
+    </Border>
+</Window>
