@@ -116,6 +116,7 @@ namespace TaskbarMiniPlayer
         public static extern bool UnhookWinEvent(IntPtr hWinEventHook);
 
         public const int GWL_EXSTYLE = -20;
+        public const int GWL_HWNDPARENT = -8;
         public const int WS_EX_NOACTIVATE = 0x08000000;
         public const int WS_EX_TOOLWINDOW = 0x00000080;
 
@@ -124,6 +125,20 @@ namespace TaskbarMiniPlayer
 
         [DllImport("user32.dll")]
         public static extern int SetWindowLong(IntPtr hwnd, int index, int value);
+
+        [DllImport("user32.dll", EntryPoint = "SetWindowLong")]
+        private static extern IntPtr SetWindowLongPtr32(IntPtr hWnd, int nIndex, IntPtr dwNewLong);
+
+        [DllImport("user32.dll", EntryPoint = "SetWindowLongPtr")]
+        private static extern IntPtr SetWindowLongPtr64(IntPtr hWnd, int nIndex, IntPtr dwNewLong);
+
+        public static IntPtr SetWindowLongPtr(IntPtr hWnd, int nIndex, IntPtr dwNewLong)
+        {
+            if (IntPtr.Size == 8)
+                return SetWindowLongPtr64(hWnd, nIndex, dwNewLong);
+            else
+                return SetWindowLongPtr32(hWnd, nIndex, dwNewLong);
+        }
 
         [StructLayout(LayoutKind.Sequential)]
         public struct RECT
