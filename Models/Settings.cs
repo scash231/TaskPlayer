@@ -44,7 +44,6 @@ namespace TaskbarMiniPlayer
         public string ScrollBehavior { get; set; } = "Marquee";
         public bool HideScrollbars { get; set; } = false;
         public bool AutoPlayOnLaunch { get; set; } = false;
-        public bool KeepTopmost { get; set; } = true;
         public string CustomAccentColor { get; set; } = "#0078D7";
 
         public bool DisableFluidAnimations { get; set; } = false;
@@ -59,6 +58,8 @@ namespace TaskbarMiniPlayer
         public bool IsTransparent => EnableTransparency && !DisableTransparency;
 
         public bool OptimizeTimerFrequencies { get; set; } = false;
+        public int TopmostIntervalMs { get; set; } = 500;
+        public int PeakMeterIntervalMs { get; set; } = 30;
 
         public LayoutStyle Layout { get; set; } = LayoutStyle.Expanded;
         public AppTheme Theme { get; set; } = AppTheme.Dark;
@@ -73,6 +74,7 @@ namespace TaskbarMiniPlayer
         // ── Mode & Profiles ──
         public bool ExpertMode { get; set; } = false;
         public string? ActiveProfileName { get; set; }
+        public bool DevMode { get; set; } = false;
 
         private static string GetSettingsPath()
         {
