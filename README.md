@@ -18,7 +18,7 @@ Tiny media controls that sit right on your Windows taskbar. Previous, play/pause
 ## compatibility
 - Windows 10 ✓
 - Windows 11 ✓
-- Windows 8 ??? -- and older are untested. 
+- Windows 8  ✓
 
 ## Media
 
