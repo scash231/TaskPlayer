@@ -164,7 +164,14 @@ namespace TaskbarMiniPlayer
                     helper.Owner = taskbar;
                 }
             }
-            catch { }
+            catch 
+            {
+                try
+                {
+                    Win32.SetWindowLongPtr(hwnd, Win32.GWL_HWNDPARENT, taskbar);
+                }
+                catch { }
+            }
 
             Win32.GetWindowRect(taskbar, out var tbRect);
             var trayWnd = Win32.FindWindowEx(taskbar, IntPtr.Zero, "TrayNotifyWnd", null);
@@ -189,29 +196,7 @@ namespace TaskbarMiniPlayer
                 window.Show();
             }
 
-            if (settings.KeepTopmost)
-            {
-                if (forceZOrder)
-                {
-                    Win32.SetWindowPos(hwnd, Win32.HWND_NOTOPMOST, xPos, yPos, myW, myH, Win32.SWP_NOACTIVATE | Win32.SWP_SHOWWINDOW);
-                    Win32.SetWindowPos(hwnd, Win32.HWND_TOPMOST, xPos, yPos, myW, myH, Win32.SWP_NOACTIVATE | Win32.SWP_SHOWWINDOW);
-                }
-                else
-                {
-                    Win32.SetWindowPos(hwnd, IntPtr.Zero, xPos, yPos, myW, myH, Win32.SWP_NOACTIVATE | Win32.SWP_NOZORDER | Win32.SWP_SHOWWINDOW);
-                }
-            }
-            else
-            {
-                if (forceZOrder)
-                {
-                    Win32.SetWindowPos(hwnd, Win32.HWND_NOTOPMOST, xPos, yPos, myW, myH, Win32.SWP_NOACTIVATE | Win32.SWP_SHOWWINDOW);
-                }
-                else
-                {
-                    Win32.SetWindowPos(hwnd, IntPtr.Zero, xPos, yPos, myW, myH, Win32.SWP_NOACTIVATE | Win32.SWP_NOZORDER | Win32.SWP_SHOWWINDOW);
-                }
-            }
+            Win32.SetWindowPos(hwnd, Win32.HWND_TOPMOST, xPos, yPos, myW, myH, Win32.SWP_NOACTIVATE | Win32.SWP_SHOWWINDOW);
         }
     }
 }
