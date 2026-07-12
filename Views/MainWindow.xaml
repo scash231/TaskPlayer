@@ -33,7 +33,7 @@
         </Style>
     </Window.Resources>
     <Grid Background="{x:Null}">
-        <Border x:Name="MainBorder" HorizontalAlignment="Right" CornerRadius="16" BorderBrush="#30FFFFFF" BorderThickness="1" MouseEnter="MainBorder_MouseEnter" MouseLeave="MainBorder_MouseLeave" MouseLeftButtonDown="MainBorder_MouseLeftButtonDown" MouseRightButtonDown="MainBorder_MouseRightButtonDown" MouseWheel="MainBorder_MouseWheel">
+        <Border x:Name="MainBorder" HorizontalAlignment="Right" CornerRadius="16" BorderBrush="#30FFFFFF" BorderThickness="1" MouseEnter="MainBorder_MouseEnter" MouseLeave="MainBorder_MouseLeave" MouseDown="MainBorder_MouseDown" MouseWheel="MainBorder_MouseWheel">
             <Border.Background>
                 <LinearGradientBrush x:Name="MainBackgroundBrush" StartPoint="0,0" EndPoint="1,1">
                     <GradientStop x:Name="MainBgStop1" Color="#661f1f24" Offset="0.0"/>

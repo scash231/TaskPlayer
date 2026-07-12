@@ -156,7 +156,8 @@ namespace TaskbarMiniPlayer
              ChkDisableAlbumArt.IsChecked = s.DisableAlbumArt;
              ChkDisableTransparency.IsChecked = s.DisableTransparency;
              ChkOptimizeTimerFrequencies.IsChecked = s.OptimizeTimerFrequencies;
-
+             ChkEnableTranslucentIco.IsChecked = s.EnableTranslucentIco;
+ 
             // Hotkeys
             SetHotkeyButton(BtnPlayPauseHotkey, s.PlayPauseHotkeyKey);
             SetHotkeyButton(BtnPrevHotkey, s.PrevHotkeyKey);
@@ -550,8 +551,9 @@ namespace TaskbarMiniPlayer
              _settings.DisableAlbumArt = ChkDisableAlbumArt.IsChecked == true;
              _settings.DisableTransparency = ChkDisableTransparency.IsChecked == true;
              _settings.OptimizeTimerFrequencies = ChkOptimizeTimerFrequencies.IsChecked == true;
-
-            _settings.ExpertMode = ChkExpertMode.IsChecked == true;
+             _settings.EnableTranslucentIco = ChkEnableTranslucentIco.IsChecked == true;
+ 
+             _settings.ExpertMode = ChkExpertMode.IsChecked == true;
         }
 
         private void SaveCurrentSettings()

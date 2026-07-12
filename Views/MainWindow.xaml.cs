@@ -155,6 +155,16 @@ namespace TaskbarMiniPlayer
             Reposition(true);
             ResetAutoHideTimer();
 
+            if (_settings.EnableTranslucentIco)
+            {
+                try
+                {
+                    var translucentSettings = TranslucentIcoSettings.Load();
+                    TranslucentIcoService.SetDesktopIconOpacity(translucentSettings.Opacity, translucentSettings.Layer);
+                }
+                catch { }
+            }
+
             try
             {
                 var enumerator = new MMDeviceEnumerator();
@@ -188,6 +198,25 @@ namespace TaskbarMiniPlayer
             ApplySettings(true);
             ApplyHotkeys();
             OnMediaStateChanged();
+
+            if (_settings.EnableTranslucentIco)
+            {
+                try
+                {
+                    var translucentSettings = TranslucentIcoSettings.Load();
+                    TranslucentIcoService.SetDesktopIconOpacity(translucentSettings.Opacity, translucentSettings.Layer);
+                }
+                catch { }
+            }
+            else
+            {
+                try
+                {
+                    var translucentSettings = TranslucentIcoSettings.Load();
+                    TranslucentIcoService.SetDesktopIconOpacity(255, translucentSettings.Layer);
+                }
+                catch { }
+            }
         }
 
         public void ApplyHotkeys()
@@ -1062,29 +1091,48 @@ namespace TaskbarMiniPlayer
             }
         }
 
-        private void MainBorder_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        private void MainBorder_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            if (e.ClickCount == 2)
+            if (e.ChangedButton == MouseButton.Left)
             {
-                foreach (Window window in System.Windows.Application.Current.Windows)
+                if (e.ClickCount == 2)
                 {
-                    if (window is SettingsWindow existingWindow)
-                    {
-                        if (existingWindow.WindowState == WindowState.Minimized)
-                            existingWindow.WindowState = WindowState.Normal;
-                        existingWindow.Activate();
-                        return;
-                    }
+                    ShowSettings();
                 }
-
-                var rect = new Rect(this.Left, this.Top, this.Width, this.Height);
-                var sw = new SettingsWindow(rect);
-                sw.ShowDialog();
-                ReloadSettings();
+            }
+            else if (e.ChangedButton == MouseButton.Right)
+            {
+                ToggleLayout();
+            }
+            else if (e.ChangedButton == MouseButton.Middle)
+            {
+                if (_settings.EnableTranslucentIco)
+                {
+                    ShowTranslucentIcoSettings();
+                }
             }
         }
 
-        private void MainBorder_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
+        private void ShowSettings()
+        {
+            foreach (Window window in System.Windows.Application.Current.Windows)
+            {
+                if (window is SettingsWindow existingWindow)
+                {
+                    if (existingWindow.WindowState == WindowState.Minimized)
+                        existingWindow.WindowState = WindowState.Normal;
+                    existingWindow.Activate();
+                    return;
+                }
+            }
+
+            var rect = new Rect(this.Left, this.Top, this.Width, this.Height);
+            var sw = new SettingsWindow(rect);
+            sw.ShowDialog();
+            ReloadSettings();
+        }
+
+        private void ToggleLayout()
         {
             if (_settings.Layout == LayoutStyle.Compact)
                 _settings.Layout = LayoutStyle.Standard;
@@ -1095,6 +1143,24 @@ namespace TaskbarMiniPlayer
                 
             _settings.Save();
             ApplySettings(true);
+        }
+
+        public void ShowTranslucentIcoSettings()
+        {
+            foreach (Window window in System.Windows.Application.Current.Windows)
+            {
+                if (window is TranslucentIcoWindow existingWindow)
+                {
+                    if (existingWindow.WindowState == WindowState.Minimized)
+                        existingWindow.WindowState = WindowState.Normal;
+                    existingWindow.Activate();
+                    return;
+                }
+            }
+
+            var rect = new Rect(this.Left, this.Top, this.Width, this.Height);
+            var tw = new TranslucentIcoWindow(rect);
+            tw.ShowDialog();
         }
 
         private void MainBorder_MouseWheel(object sender, MouseWheelEventArgs e)

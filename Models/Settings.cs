@@ -53,6 +53,7 @@ namespace TaskbarMiniPlayer
         public bool DisableTextScrolling { get; set; } = false;
         public bool DisableAlbumArt { get; set; } = false;
         public bool DisableTransparency { get; set; } = false;
+        public bool EnableTranslucentIco { get; set; } = true;
 
         [System.Text.Json.Serialization.JsonIgnore]
         public bool IsTransparent => EnableTransparency && !DisableTransparency;

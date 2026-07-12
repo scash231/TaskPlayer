@@ -51,6 +51,17 @@ namespace TaskbarMiniPlayer
 
                 _notifyIcon.ContextMenuStrip = contextMenu;
                 _notifyIcon.DoubleClick += (s, args) => ShowSettings();
+                _notifyIcon.MouseClick += (s, args) =>
+                {
+                    if (args.Button == MouseButtons.Middle)
+                    {
+                        var settings = Settings.Load();
+                        if (settings.EnableTranslucentIco)
+                        {
+                            ShowTranslucentIcoSettings();
+                        }
+                    }
+                };
             }
             catch (Exception ex)
             {
@@ -78,6 +89,27 @@ namespace TaskbarMiniPlayer
                 var settingsWindow = new SettingsWindow(rect);
                 settingsWindow.ShowDialog();
                 _mainWindow.ReloadSettings();
+            }
+        }
+
+        private void ShowTranslucentIcoSettings()
+        {
+            if (_mainWindow != null)
+            {
+                foreach (Window window in System.Windows.Application.Current.Windows)
+                {
+                    if (window is TranslucentIcoWindow existingWindow)
+                    {
+                        if (existingWindow.WindowState == WindowState.Minimized)
+                            existingWindow.WindowState = WindowState.Normal;
+                        existingWindow.Activate();
+                        return;
+                    }
+                }
+
+                var rect = new System.Windows.Rect(_mainWindow.Left, _mainWindow.Top, _mainWindow.Width, _mainWindow.Height);
+                var translucentIcoWindow = new TranslucentIcoWindow(rect);
+                translucentIcoWindow.ShowDialog();
             }
         }
 

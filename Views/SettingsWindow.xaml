@@ -706,10 +706,10 @@
                                         </Grid>
                                         <Grid Margin="0,4">
                                             <StackPanel VerticalAlignment="Center">
-                                                <TextBlock Text="Keep Player Topmost" FontSize="12" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
-                                                <TextBlock Text="Ensure the player stays above other windows" FontSize="9.5" Foreground="{DynamicResource TextSec}" Opacity="0.7"/>
+                                                <TextBlock Text="Enable TranslucentICO" FontSize="12" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
+                                                <TextBlock Text="Enable middle-click shortcut to adjust desktop icon opacity" FontSize="9.5" Foreground="{DynamicResource TextSec}" Opacity="0.7"/>
                                             </StackPanel>
-                                            <CheckBox x:Name="ChkKeepTopmost" Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                            <CheckBox x:Name="ChkEnableTranslucentIco" Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
                                         </Grid>
                                         <Grid Margin="0,4">
                                             <StackPanel VerticalAlignment="Center">
@@ -1148,6 +1148,15 @@
                                     <TextBlock Text="ADVANCED AESTHETICS" FontSize="10.5" FontWeight="Bold" Foreground="{DynamicResource Accent}" Margin="4,8,4,8"/>
                                     <Border Background="#0CFFFFFF" BorderBrush="#18FFFFFF" BorderThickness="0.5" CornerRadius="12" Margin="0,0,0,16">
                                         <StackPanel>
+                                            <Border Padding="14,12" BorderBrush="#10FFFFFF" BorderThickness="0,0,0,0.5">
+                                                <Grid>
+                                                    <StackPanel VerticalAlignment="Center" Margin="0,0,50,0">
+                                                        <TextBlock Text="Keep Player Topmost" FontSize="12.5" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
+                                                        <TextBlock Text="Ensure the player stays above other windows" FontSize="10" Foreground="{DynamicResource TextSec}" Opacity="0.7" Margin="0,2,0,0"/>
+                                                    </StackPanel>
+                                                    <CheckBox x:Name="ChkKeepTopmost" Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                                </Grid>
+                                            </Border>
                                             <Border Padding="14,12" BorderBrush="#10FFFFFF" BorderThickness="0,0,0,0.5">
                                                 <Grid>
                                                     <StackPanel VerticalAlignment="Center" Margin="0,0,50,0">
