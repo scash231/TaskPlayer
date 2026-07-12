@@ -1,7 +1,7 @@
 # TaskPlayer
 
 Tiny media controls that sit right on your Windows taskbar. Previous, play/pause, next.
-
+### Rich Customization with thousands of different styles
 <img width="567" height="46" alt="Screenshot 2026-07-10 214748" src="https://github.com/user-attachments/assets/e841bec7-91f3-47a2-b770-e5591da40258" />
 <img width="577" height="122" alt="Screenshot 2026-07-10 213722" src="https://github.com/user-attachments/assets/323e1cfd-966d-400d-b588-17b1cea57a64" />
 <img width="983" height="514" alt="Screenshot 2026-07-10 213632" src="https://github.com/user-attachments/assets/3bd787a7-d094-41ea-baaa-84458223d6f8" />
