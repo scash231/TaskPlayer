@@ -55,7 +55,8 @@ namespace TaskbarMiniPlayer
                 EnforceZOrder();
                 Reposition();
             };
-            _zOrderTimer.Start();
+            if (!_settings.DisableTopmostTimer)
+                _zOrderTimer.Start();
 
             _timelineTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
             _timelineTimer.Tick += TimelineTimer_Tick;
@@ -212,6 +213,10 @@ namespace TaskbarMiniPlayer
             if (_zOrderTimer != null)
             {
                 _zOrderTimer.Interval = TimeSpan.FromMilliseconds(_settings.TopmostIntervalMs);
+                if (_settings.DisableTopmostTimer)
+                    _zOrderTimer.Stop();
+                else
+                    _zOrderTimer.Start();
             }
             if (_peakMeterTimer != null)
             {
@@ -234,16 +239,19 @@ namespace TaskbarMiniPlayer
         {
             Dispatcher.Invoke(() =>
             {
-                BtnPlay.Content = _mediaManager.IsPlaying ? "\uE769" : "\uE768";
+                BtnPlay.Content = _mediaManager?.IsPlaying == true ? "\uE769" : "\uE768";
+
                 
-                string newTitle = string.IsNullOrEmpty(_mediaManager.Title) ? "Unknown" : _mediaManager.Title;
-                string newArtist = string.IsNullOrEmpty(_mediaManager.Artist) ? "Unknown" : _mediaManager.Artist;
+                string? newTitle = _mediaManager?.Title;
+                if (string.IsNullOrEmpty(newTitle)) newTitle = "Unknown";
+                string? newArtist = _mediaManager?.Artist;
+                if (string.IsNullOrEmpty(newArtist)) newArtist = "Unknown";
                 bool songChanged = TxtTitle.Text != newTitle || TxtArtist.Text != newArtist;
                 
                 byte alpha = _settings.IsTransparent ? (byte)(_settings.BackgroundOpacity * 255) : (byte)255;
                 double tintStrength = _settings.AdaptiveTintStrength;
 
-                var bmp = _mediaManager.AlbumArt as BitmapSource;
+                var bmp = _mediaManager?.AlbumArt as BitmapSource;
                 if (bmp != null && !_settings.DisableAlbumArt)
                 {
                     ImgAlbumArt.Source = bmp;
@@ -311,7 +319,7 @@ namespace TaskbarMiniPlayer
                     TimelineBorder2.Stroke = defaultBrush;
                 }
 
-                if (_mediaManager.IsPlaying)
+                if (_mediaManager?.IsPlaying == true)
                 {
                     _isAutoHidden = false;
                     if (_settings.ShowPlayer) Show();
@@ -380,7 +388,7 @@ namespace TaskbarMiniPlayer
 
                 if (_settings.BorderMode == BorderMode.Timeline)
                 {
-                    if (_mediaManager.IsPlaying)
+                    if (_mediaManager?.IsPlaying == true)
                     {
                         _timelineTimer.Start();
                     }
@@ -600,6 +608,10 @@ namespace TaskbarMiniPlayer
             if (_zOrderTimer != null)
             {
                 _zOrderTimer.Interval = TimeSpan.FromMilliseconds(_settings.TopmostIntervalMs);
+                if (_settings.DisableTopmostTimer)
+                    _zOrderTimer.Stop();
+                else
+                    _zOrderTimer.Start();
             }
             if (_timelineTimer != null)
             {
@@ -746,6 +758,8 @@ namespace TaskbarMiniPlayer
             BtnPrev.Width = _settings.ButtonSize;
             BtnPlay.Width = _settings.ButtonSize;
             BtnNext.Width = _settings.ButtonSize;
+
+
 
             if (_settings.ShowPlayer && !_isAutoHidden)
             {
@@ -1157,12 +1171,9 @@ namespace TaskbarMiniPlayer
 
         private void MainBorder_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            if (e.ChangedButton == MouseButton.Left)
+            if (e.ChangedButton == MouseButton.Left && e.ClickCount == 2)
             {
-                if (e.ClickCount == 2)
-                {
-                    ShowSettings();
-                }
+                _mediaManager.FocusActiveMediaApp();
             }
             else if (e.ChangedButton == MouseButton.Right)
             {
@@ -1170,10 +1181,7 @@ namespace TaskbarMiniPlayer
             }
             else if (e.ChangedButton == MouseButton.Middle)
             {
-                if (_settings.EnableTranslucentIco)
-                {
-                    ShowTranslucentIcoSettings();
-                }
+                ShowSettings();
             }
         }
 
@@ -1223,7 +1231,7 @@ namespace TaskbarMiniPlayer
             }
 
             var rect = new Rect(this.Left, this.Top, this.Width, this.Height);
-            var tw = new TranslucentIcoWindow(rect);
+            var tw = new TranslucentIcoWindow(rect, this);
             tw.Show();
         }
 

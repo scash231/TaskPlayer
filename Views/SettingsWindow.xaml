@@ -21,6 +21,43 @@
         <SolidColorBrush x:Key="PopupBg" Color="#1A1A1A"/>
         <SolidColorBrush x:Key="PopupBorder" Color="#303030"/>
 
+        <!-- Custom styled tooltip: dark theme, rounded corners, drop shadow -->
+        <Style TargetType="ToolTip">
+            <Setter Property="Background" Value="#1E1E20"/>
+            <Setter Property="Foreground" Value="#E0E0E0"/>
+            <Setter Property="BorderBrush" Value="#2A2A2C"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="FontSize" Value="10.5"/>
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="HasDropShadow" Value="True"/>
+            <Setter Property="Placement" Value="MousePoint"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToolTip">
+                        <Border Background="#1E1E20"
+                                BorderBrush="#33FFFFFF"
+                                BorderThickness="0.5"
+                                CornerRadius="8"
+                                Padding="{TemplateBinding Padding}"
+                                SnapsToDevicePixels="True">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="12" ShadowDepth="2" Color="Black" Opacity="0.4"/>
+                            </Border.Effect>
+                            <ContentPresenter Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" HorizontalAlignment="Left" VerticalAlignment="Center">
+                                <ContentPresenter.Resources>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="TextWrapping" Value="Wrap"/>
+                                        <Setter Property="MaxWidth" Value="240"/>
+                                    </Style>
+                                </ContentPresenter.Resources>
+                            </ContentPresenter>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <sys:Double x:Key="GlobalScrollBarWidth">6</sys:Double>
         <sys:Double x:Key="GlobalScrollBarHeight">6</sys:Double>
 
@@ -646,7 +683,7 @@
                                <TextBlock x:Name="TxtSettingsTitle" Text="Settings" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" MouseLeftButtonDown="TxtSettingsTitle_MouseLeftButtonDown" Background="Transparent" Cursor="Hand"/>
                            </StackPanel>
                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                               <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
+                               <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0" ToolTip="Access advanced positioning, sizing, scrolling, hotkeys, and performance settings" ToolTipService.IsEnabled="{Binding ElementName=ChkTooltips, Path=IsChecked}">
                                    <TextBlock Text="Expert Mode" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextSec}" Margin="0,0,8,0" VerticalAlignment="Center"/>
                                    <CheckBox x:Name="ChkExpertMode" Style="{StaticResource ToggleSwitch}" VerticalAlignment="Center" Checked="ChkExpertMode_Changed" Unchecked="ChkExpertMode_Changed"/>
                                </StackPanel>
@@ -690,42 +727,45 @@
                                 <TextBlock Text="GENERAL &amp; PLAYBACK" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource Accent}" Margin="4,4,4,6"/>
                                 <Border Background="#0CFFFFFF" BorderBrush="#18FFFFFF" BorderThickness="0.5" CornerRadius="12" Padding="12,8">
                                     <StackPanel>
-                                        <Grid Margin="0,4">
+                                        <Grid Margin="0,4" Background="Transparent" ToolTip="Launch player automatically on Windows logon" ToolTipService.IsEnabled="{Binding ElementName=ChkTooltips, Path=IsChecked}">
                                             <StackPanel VerticalAlignment="Center">
                                                 <TextBlock Text="Launch on Startup" FontSize="12" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
                                                 <TextBlock Text="Automatically start with Windows" FontSize="9.5" Foreground="{DynamicResource TextSec}" Opacity="0.7"/>
                                             </StackPanel>
                                             <CheckBox x:Name="ChkStartup" Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
                                         </Grid>
-                                        <Grid Margin="0,4">
+                                        <Grid Margin="0,4" Background="Transparent" ToolTip="Start playback automatically when the app launches" ToolTipService.IsEnabled="{Binding ElementName=ChkTooltips, Path=IsChecked}">
                                             <StackPanel VerticalAlignment="Center">
                                                 <TextBlock Text="Auto-Play on Launch" FontSize="12" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
                                                 <TextBlock Text="Automatically play media on startup" FontSize="9.5" Foreground="{DynamicResource TextSec}" Opacity="0.7"/>
                                             </StackPanel>
                                             <CheckBox x:Name="ChkAutoPlayOnLaunch" Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
                                         </Grid>
-                                        <Grid Margin="0,4">
-                                            <StackPanel VerticalAlignment="Center">
-                                                <TextBlock Text="Enable TranslucentICO [BETA]" FontSize="12" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
-                                                <TextBlock Text="Enable middle-click shortcut to adjust desktop icon opacity" FontSize="9.5" Foreground="{DynamicResource TextSec}" Opacity="0.7"/>
+                                        <Grid Margin="0,4" Background="Transparent" ToolTip="Apply custom transparency and opacity to your desktop icons" ToolTipService.IsEnabled="{Binding ElementName=ChkTooltips, Path=IsChecked}">
+                                            <StackPanel VerticalAlignment="Center" Margin="0,0,140,0">
+                                                <TextBlock Text="TranslucentICO" FontSize="12" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
+                                                <TextBlock Text="Apply opacity to desktop icons" FontSize="9.5" Foreground="{DynamicResource TextSec}" Opacity="0.7"/>
                                             </StackPanel>
-                                            <CheckBox x:Name="ChkEnableTranslucentIco" Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                                <Button x:Name="BtnOpenTranslucentIco" Content="Settings" Style="{StaticResource OutlineBtn}" FontSize="11" Margin="0,0,8,0" Padding="8,3" Click="OpenTranslucentIco_Click" IsEnabled="{Binding ElementName=ChkEnableTranslucentIco, Path=IsChecked}" ToolTip="Open TranslucentICO styling options" ToolTipService.IsEnabled="{Binding ElementName=ChkTooltips, Path=IsChecked}"/>
+                                                <CheckBox x:Name="ChkEnableTranslucentIco" Style="{StaticResource ToggleSwitch}" VerticalAlignment="Center"/>
+                                            </StackPanel>
                                         </Grid>
-                                        <Grid Margin="0,4">
+                                        <Grid Margin="0,4" Background="Transparent" ToolTip="Display the mini player in the taskbar" ToolTipService.IsEnabled="{Binding ElementName=ChkTooltips, Path=IsChecked}">
                                             <StackPanel VerticalAlignment="Center">
                                                 <TextBlock Text="Show Player Controls" FontSize="12" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
                                                 <TextBlock Text="Display the player in the taskbar" FontSize="9.5" Foreground="{DynamicResource TextSec}" Opacity="0.7"/>
                                             </StackPanel>
                                             <CheckBox x:Name="ChkShowPlayer" Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
                                         </Grid>
-                                        <Grid Margin="0,4">
+                                        <Grid Margin="0,4" Background="Transparent" ToolTip="Show volume slider when hovering over player" ToolTipService.IsEnabled="{Binding ElementName=ChkTooltips, Path=IsChecked}">
                                             <StackPanel VerticalAlignment="Center">
                                                 <TextBlock Text="Volume Slider Popup" FontSize="12" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
                                                 <TextBlock Text="Enable hovering over the player for volume slider" FontSize="9.5" Foreground="{DynamicResource TextSec}" Opacity="0.7"/>
                                             </StackPanel>
                                             <CheckBox x:Name="ChkVolumeSlider" Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
                                         </Grid>
-                                        <Grid Margin="0,4">
+                                        <Grid Margin="0,4" Background="Transparent" ToolTip="Time before player automatically hides when paused (set to 0 to disable)" ToolTipService.IsEnabled="{Binding ElementName=ChkTooltips, Path=IsChecked}">
                                             <StackPanel VerticalAlignment="Center" Margin="0,0,90,0">
                                                 <TextBlock Text="Auto-hide Delay" FontSize="12" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
                                                 <TextBlock Text="Set to 0 to disable auto-hide" FontSize="9.5" Foreground="{DynamicResource TextSec}" Opacity="0.7"/>
@@ -744,7 +784,7 @@
                                 <TextBlock Text="LAYOUT &amp; APPEARANCE" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource Accent}" Margin="4,4,4,6"/>
                                 <Border Background="#0CFFFFFF" BorderBrush="#18FFFFFF" BorderThickness="0.5" CornerRadius="12" Padding="12,8">
                                     <StackPanel>
-                                        <Grid Margin="0,4">
+                                        <Grid Margin="0,4" Background="Transparent" ToolTip="Change the layout style of the player" ToolTipService.IsEnabled="{Binding ElementName=ChkTooltips, Path=IsChecked}">
                                             <StackPanel VerticalAlignment="Center">
                                                 <TextBlock Text="Layout Style" FontSize="12" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
                                             </StackPanel>
@@ -754,36 +794,29 @@
                                                 <ComboBoxItem Content="Expanded" Tag="Expanded"/>
                                             </ComboBox>
                                         </Grid>
-                                        <Grid Margin="0,4">
+                                        <Grid Margin="0,4" Background="Transparent" ToolTip="Hide artist name and align title to center" ToolTipService.IsEnabled="{Binding ElementName=ChkTooltips, Path=IsChecked}">
                                             <StackPanel VerticalAlignment="Center">
                                                 <TextBlock Text="Hide Artist &amp; Center Title" FontSize="12" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
                                             </StackPanel>
                                             <CheckBox x:Name="ChkHideArtist" Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
                                         </Grid>
-                                        <Grid Margin="0,4">
+                                        <Grid Margin="0,4" Background="Transparent" ToolTip="Toggle helper descriptions on hover" ToolTipService.IsEnabled="{Binding ElementName=ChkTooltips, Path=IsChecked}">
                                             <StackPanel VerticalAlignment="Center">
-                                                <TextBlock Text="App Theme" FontSize="12" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
+                                                <TextBlock Text="Show Tooltips" FontSize="12" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
                                             </StackPanel>
-                                            <ComboBox x:Name="CmbTheme" HorizontalAlignment="Right" VerticalAlignment="Center" Width="90">
-                                                <ComboBoxItem Content="System" Tag="System"/>
-                                                <ComboBoxItem Content="Light" Tag="Light"/>
-                                                <ComboBoxItem Content="Dark" Tag="Dark"/>
+                                            <CheckBox x:Name="ChkTooltips" Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                        </Grid>
+                                        <Grid Margin="0,4" Background="Transparent" ToolTip="Choose how the timeline border traces" ToolTipService.IsEnabled="{Binding ElementName=ChkTooltips, Path=IsChecked}">
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Text="Timeline Style" FontSize="12" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
+                                            </StackPanel>
+                                            <ComboBox x:Name="CmbTimelineStyle" HorizontalAlignment="Right" VerticalAlignment="Center" Width="120">
+                                                <ComboBoxItem Content="Default" Tag="Default"/>
+                                                <ComboBoxItem Content="Flipped" Tag="Flipped"/>
+                                                <ComboBoxItem Content="Both Sides" Tag="BothSides"/>
                                             </ComboBox>
                                         </Grid>
-                                        <Grid Margin="0,4">
-                                            <StackPanel VerticalAlignment="Center">
-                                                <TextBlock Text="Accent Color" FontSize="12" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
-                                            </StackPanel>
-                                            <ComboBox x:Name="CmbAccentColor" HorizontalAlignment="Right" VerticalAlignment="Center" Width="120">
-                                                <ComboBoxItem Content="Default Blue" Tag="#0078D7"/>
-                                                <ComboBoxItem Content="Emerald Green" Tag="#107C41"/>
-                                                <ComboBoxItem Content="Sunset Orange" Tag="#D83B01"/>
-                                                <ComboBoxItem Content="Crimson Red" Tag="#E81123"/>
-                                                <ComboBoxItem Content="Amethyst Purple" Tag="#8660A9"/>
-                                                <ComboBoxItem Content="Sakura Pink" Tag="#E3008C"/>
-                                            </ComboBox>
-                                        </Grid>
-                                        <Grid Margin="0,4">
+                                        <Grid Margin="0,4" Background="Transparent" ToolTip="Set player border type (None, Static, or dynamic Timeline)" ToolTipService.IsEnabled="{Binding ElementName=ChkTooltips, Path=IsChecked}">
                                             <StackPanel VerticalAlignment="Center">
                                                 <TextBlock Text="Border Style" FontSize="12" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
                                             </StackPanel>
@@ -793,13 +826,13 @@
                                                 <ComboBoxItem Content="Timeline" Tag="Timeline"/>
                                             </ComboBox>
                                         </Grid>
-                                        <Grid Margin="0,4">
+                                        <Grid Margin="0,4" Background="Transparent" ToolTip="Enable semi-transparent player background" ToolTipService.IsEnabled="{Binding ElementName=ChkTooltips, Path=IsChecked}">
                                             <StackPanel VerticalAlignment="Center">
                                                 <TextBlock Text="Transparency" FontSize="12" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
                                             </StackPanel>
                                             <CheckBox x:Name="ChkEnableTransparency" Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center" Checked="ChkEnableTransparency_Changed" Unchecked="ChkEnableTransparency_Changed"/>
                                         </Grid>
-                                        <Grid x:Name="RowBackgroundOpacity" Margin="0,4">
+                                        <Grid x:Name="RowBackgroundOpacity" Margin="0,4" Background="Transparent" ToolTip="Set player background transparency level" ToolTipService.IsEnabled="{Binding ElementName=ChkTooltips, Path=IsChecked}">
                                             <StackPanel VerticalAlignment="Center" Margin="0,0,100,0">
                                                 <TextBlock Text="Background Opacity" FontSize="12" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
                                             </StackPanel>
@@ -814,12 +847,15 @@
                         </Grid>
                     </ScrollViewer>
 
-                    <!-- Save / Exit Buttons at Bottom of Simple Settings -->
-                    <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="16,6,16,12">
-                        <Button Content="Cancel" Style="{StaticResource OutlineBtn}" Margin="0,0,8,0" Click="Cancel_Click"/>
-                        <Button Content="Save" Style="{StaticResource OutlineBtn}" Margin="0,0,8,0" Click="Save_Click"/>
-                        <Button Content="Save &amp; Exit" Style="{StaticResource GradRectBtn}" Click="SaveAndExit_Click"/>
-                    </StackPanel>
+                    <!-- Bottom Bar of Simple Settings -->
+                    <Grid Grid.Row="3" Margin="16,6,16,12">
+                        <Button Content="Help" Style="{StaticResource OutlineBtn}" HorizontalAlignment="Left" Click="Help_Click"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button Content="Cancel" Style="{StaticResource OutlineBtn}" Margin="0,0,8,0" Click="Cancel_Click"/>
+                            <Button Content="Save" Style="{StaticResource OutlineBtn}" Margin="0,0,8,0" Click="Save_Click"/>
+                            <Button Content="Save &amp; Exit" Style="{StaticResource GradRectBtn}" Click="SaveAndExit_Click"/>
+                        </StackPanel>
+                    </Grid>
                 </Grid>
             </Border>
 
@@ -1158,19 +1194,7 @@
                                                     <CheckBox x:Name="ChkHideScrollbars" Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center" Checked="ChkHideScrollbars_Changed" Unchecked="ChkHideScrollbars_Changed"/>
                                                 </Grid>
                                             </Border>
-                                            <Border Padding="14,12" BorderBrush="#10FFFFFF" BorderThickness="0,0,0,0.5">
-                                                <Grid>
-                                                    <StackPanel VerticalAlignment="Center" Margin="0,0,120,0">
-                                                        <TextBlock Text="Timeline Style" FontSize="12.5" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
-                                                        <TextBlock Text="Choose how the timeline border traces" FontSize="10" Foreground="{DynamicResource TextSec}" Opacity="0.7" Margin="0,2,0,0"/>
-                                                    </StackPanel>
-                                                    <ComboBox x:Name="CmbTimelineStyle" HorizontalAlignment="Right" VerticalAlignment="Center" Width="120">
-                                                        <ComboBoxItem Content="Default" Tag="Default"/>
-                                                        <ComboBoxItem Content="Flipped" Tag="Flipped"/>
-                                                        <ComboBoxItem Content="Both Sides" Tag="BothSides"/>
-                                                    </ComboBox>
-                                                </Grid>
-                                            </Border>
+
                                             <Border Padding="14,12">
                                                 <Grid>
                                                     <StackPanel VerticalAlignment="Center" Margin="0,0,160,0">
@@ -1189,6 +1213,98 @@
 
                             </Grid>
                         </ScrollViewer>
+                    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- Help Overlay Modal -->
+        <Grid x:Name="HelpOverlay" Visibility="Collapsed" Background="Transparent">
+            <Border BorderBrush="{DynamicResource BorderSub}" BorderThickness="1"
+                    Background="{DynamicResource BgDeep}" CornerRadius="16"
+                    Width="460" Height="240" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="25" ShadowDepth="0" Color="Black" Opacity="0.6"/>
+                </Border.Effect>
+                <Grid Margin="24">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/> <!-- Title & Close -->
+                        <RowDefinition Height="*"/>    <!-- Slide Content -->
+                        <RowDefinition Height="Auto"/> <!-- Nav Dots & Buttons -->
+                    </Grid.RowDefinitions>
+
+                    <!-- Header -->
+                    <Grid Grid.Row="0">
+                        <TextBlock Text="Help" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
+                        <Button Style="{StaticResource IconBtn}" HorizontalAlignment="Right" Width="28" Height="28" Click="CloseHelp_Click" Foreground="{DynamicResource TextSec}">
+                            <TextBlock Text="✕" FontSize="11"/>
+                        </Button>
+                    </Grid>
+
+                    <!-- Slide Content Panels -->
+                    <!-- Slide 1 -->
+                    <StackPanel x:Name="HelpSlide1" Grid.Row="1" VerticalAlignment="Center" Margin="0,16">
+                        <TextBlock Text="Basic Controls" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource Accent}" Margin="0,0,0,12"/>
+                        <Grid Margin="0,4">
+                            <TextBlock Text="Middle Click" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}"/>
+                            <TextBlock Text="Open Settings window" HorizontalAlignment="Right" Foreground="{DynamicResource TextSec}"/>
+                        </Grid>
+                        <Grid Margin="0,4">
+                            <TextBlock Text="Right Click" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}"/>
+                            <TextBlock Text="Cycle player layouts" HorizontalAlignment="Right" Foreground="{DynamicResource TextSec}"/>
+                        </Grid>
+                    </StackPanel>
+
+                    <!-- Slide 2 -->
+                    <StackPanel x:Name="HelpSlide2" Grid.Row="1" VerticalAlignment="Center" Margin="0,16" Visibility="Collapsed">
+                        <TextBlock Text="Volume &amp; Session Control" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource Accent}" Margin="0,0,0,12"/>
+                        <Grid Margin="0,4">
+                            <TextBlock Text="Mouse Wheel" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}"/>
+                            <TextBlock Text="Scroll over the player to change active media sessions" HorizontalAlignment="Right" Foreground="{DynamicResource TextSec}"/>
+                        </Grid>
+                        <Grid Margin="0,4">
+                            <TextBlock Text="Hover" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}"/>
+                            <TextBlock Text="Hover over the player to reveal the volume slider popup" HorizontalAlignment="Right" Foreground="{DynamicResource TextSec}"/>
+                        </Grid>
+                        <Grid Margin="0,4">
+                            <TextBlock Text="Volume Icon" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}"/>
+                            <TextBlock Text="Click the volume icon in the popup to mute/unmute" HorizontalAlignment="Right" Foreground="{DynamicResource TextSec}"/>
+                        </Grid>
+                    </StackPanel>
+
+                    <!-- Slide 3 -->
+                    <StackPanel x:Name="HelpSlide3" Grid.Row="1" VerticalAlignment="Center" Margin="0,16" Visibility="Collapsed">
+                        <TextBlock Text="Advanced Features" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource Accent}" Margin="0,0,0,12"/>
+                        <Grid Margin="0,4">
+                            <TextBlock Text="TranslucentICO" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}"/>
+                            <TextBlock Text="Change transparency levels for your desktop icons" HorizontalAlignment="Right" Foreground="{DynamicResource TextSec}"/>
+                        </Grid>
+                        <Grid Margin="0,4">
+                            <TextBlock Text="System Hotkeys" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}"/>
+                            <TextBlock Text="Configure global hotkeys under Expert Settings" HorizontalAlignment="Right" Foreground="{DynamicResource TextSec}"/>
+                        </Grid>
+                        <Grid Margin="0,4">
+                            <TextBlock Text="Expert Mode" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}"/>
+                            <TextBlock Text="Toggle in the top right to access position offsets &amp; more" HorizontalAlignment="Right" Foreground="{DynamicResource TextSec}"/>
+                        </Grid>
+                    </StackPanel>
+
+                    <!-- Navigation Footer -->
+                    <Grid Grid.Row="2" Margin="0,8,0,0">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
+                            <Button x:Name="BtnPrevHelp" Content="Previous" Style="{StaticResource OutlineBtn}" Padding="10,4" FontSize="11" Click="PrevHelp_Click"/>
+                        </StackPanel>
+                        
+                        <!-- Slide indicators -->
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <Ellipse x:Name="Dot1" Width="6" Height="6" Margin="3" Fill="{DynamicResource Accent}"/>
+                            <Ellipse x:Name="Dot2" Width="6" Height="6" Margin="3" Fill="{DynamicResource TextSec}" Opacity="0.4"/>
+                            <Ellipse x:Name="Dot3" Width="6" Height="6" Margin="3" Fill="{DynamicResource TextSec}" Opacity="0.4"/>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                            <Button x:Name="BtnNextHelp" Content="Next" Style="{StaticResource OutlineBtn}" Padding="10,4" FontSize="11" Click="NextHelp_Click"/>
+                        </StackPanel>
                     </Grid>
                 </Grid>
             </Border>

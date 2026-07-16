@@ -76,16 +76,11 @@ namespace TaskbarMiniPlayer
                 };
 
                 _notifyIcon.ContextMenuStrip = contextMenu;
-                _notifyIcon.DoubleClick += (s, args) => ShowSettings();
                 _notifyIcon.MouseClick += (s, args) =>
                 {
                     if (args.Button == MouseButtons.Middle)
                     {
-                        var settings = Settings.Load();
-                        if (settings.EnableTranslucentIco)
-                        {
-                            ShowTranslucentIcoSettings();
-                        }
+                        ShowSettings();
                     }
                 };
             }
@@ -134,7 +129,7 @@ namespace TaskbarMiniPlayer
                 }
 
                 var rect = new System.Windows.Rect(_mainWindow.Left, _mainWindow.Top, _mainWindow.Width, _mainWindow.Height);
-                var translucentIcoWindow = new TranslucentIcoWindow(rect);
+                var translucentIcoWindow = new TranslucentIcoWindow(rect, _mainWindow);
                 translucentIcoWindow.Show();
             }
         }

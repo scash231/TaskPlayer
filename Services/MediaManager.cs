@@ -387,5 +387,64 @@ namespace TaskbarMiniPlayer
         {
             MediaStateChanged?.Invoke();
         }
+
+        public void FocusActiveMediaApp()
+        {
+            if (IsSimulationEnabled) return;
+            if (_currentSession == null) return;
+
+            string appId = _currentSession.SourceAppUserModelId.ToLowerInvariant();
+            string processTarget = appId;
+            try
+            {
+                if (appId.Contains("!"))
+                {
+                    var parts = appId.Split(new[] { '_', '!' }, StringSplitOptions.RemoveEmptyEntries);
+                    if (parts.Length > 0)
+                        processTarget = parts[0];
+                }
+                else if (appId.EndsWith(".exe"))
+                {
+                    processTarget = Path.GetFileNameWithoutExtension(appId);
+                }
+                else if (appId.Contains("\\") || appId.Contains("/"))
+                {
+                    processTarget = Path.GetFileNameWithoutExtension(appId);
+                }
+            }
+            catch { }
+
+            var processes = System.Diagnostics.Process.GetProcesses();
+            foreach (var proc in processes)
+            {
+                try
+                {
+                    string procName = proc.ProcessName.ToLowerInvariant();
+                    bool match = false;
+
+                    if (procName == processTarget || appId.Contains(procName) || procName.Contains(processTarget))
+                    {
+                        match = true;
+                    }
+                    else
+                    {
+                        string title = proc.MainWindowTitle.ToLowerInvariant();
+                        if (!string.IsNullOrEmpty(title) && (title.Contains(Title.ToLowerInvariant()) || title.Contains(Artist.ToLowerInvariant())))
+                        {
+                            match = true;
+                        }
+                    }
+
+                    if (match && proc.MainWindowHandle != IntPtr.Zero)
+                    {
+                        IntPtr hWnd = proc.MainWindowHandle;
+                        Win32.ShowWindow(hWnd, Win32.SW_RESTORE);
+                        Win32.SetForegroundWindow(hWnd);
+                        return;
+                    }
+                }
+                catch { }
+            }
+        }
     }
 }

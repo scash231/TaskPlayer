@@ -140,6 +140,16 @@ namespace TaskbarMiniPlayer
                 return SetWindowLongPtr32(hWnd, nIndex, dwNewLong);
         }
 
+        public const int SW_RESTORE = 9;
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool SetForegroundWindow(IntPtr hWnd);
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
         [StructLayout(LayoutKind.Sequential)]
         public struct RECT
         {

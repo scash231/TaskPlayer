@@ -22,11 +22,12 @@ namespace TaskbarMiniPlayer
         private enum ProfileEditMode { None, Save, Rename }
         private ProfileEditMode _profileEditMode = ProfileEditMode.None;
 
-        public TranslucentIcoWindow(Rect originRect)
+        public TranslucentIcoWindow(Rect originRect, Window? owner = null)
         {
             InitializeComponent();
             _originRect = originRect;
             _settings = TranslucentIcoSettings.Load();
+            this.Owner = owner;
             
             // Clone the loaded settings for reversion backup
             _savedBackup = new TranslucentIcoSettings
@@ -41,30 +42,6 @@ namespace TaskbarMiniPlayer
             this.Width = 704;
             this.Height = 454;
 
-            // Spawn window to the left and either above or below the player window
-            double dpiScale = 1.0;
-            if (System.Windows.Application.Current.MainWindow != null)
-            {
-                try
-                {
-                    dpiScale = VisualTreeHelper.GetDpi(System.Windows.Application.Current.MainWindow).PixelsPerDip;
-                }
-                catch { }
-            }
-            double physY = (originRect.Top + originRect.Height / 2) * dpiScale;
-            var screen = System.Windows.Forms.Screen.FromPoint(new System.Drawing.Point((int)((originRect.Left + originRect.Width / 2) * dpiScale), (int)physY));
-            bool spawnBelow = physY < (screen.Bounds.Top + screen.Bounds.Height / 2);
-
-            this.Left = originRect.Right - 704;
-            if (spawnBelow)
-            {
-                this.Top = originRect.Bottom + 15;
-            }
-            else
-            {
-                this.Top = originRect.Top - 454 - 15;
-            }
-
             // Sync with main app theme and accent if available
             try
             {
@@ -78,7 +55,9 @@ namespace TaskbarMiniPlayer
 
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
-            FluidMotion.MorphOpen(RootGrid, WindowScale, WindowTranslate, _originRect, this);
+            var fadeDur = TimeSpan.FromMilliseconds(200);
+            RootGrid.BeginAnimation(UIElement.OpacityProperty,
+                new System.Windows.Media.Animation.DoubleAnimation(0, 1, fadeDur) { EasingFunction = new System.Windows.Media.Animation.QuadraticEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut } });
 
             PopulateFromSettings(_settings);
             RefreshProfileList();
@@ -364,14 +343,20 @@ namespace TaskbarMiniPlayer
             if (_isAnimatingClose) return;
             _isAnimatingClose = true;
 
-            FluidMotion.MorphClose(RootGrid, WindowScale, WindowTranslate, _originRect, this,
-                () => {
-                    try
-                    {
-                        Close();
-                    }
-                    catch (InvalidOperationException) { }
-                });
+            var fadeDur = TimeSpan.FromMilliseconds(150);
+            var fadeAnim = new System.Windows.Media.Animation.DoubleAnimation(0, fadeDur)
+            {
+                EasingFunction = new System.Windows.Media.Animation.QuadraticEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseIn }
+            };
+            fadeAnim.Completed += (s, e) =>
+            {
+                try
+                {
+                    Close();
+                }
+                catch (InvalidOperationException) { }
+            };
+            RootGrid.BeginAnimation(UIElement.OpacityProperty, fadeAnim);
         }
 
         private static void SelectComboByTag(ComboBox combo, string tag)

@@ -53,12 +53,14 @@ namespace TaskbarMiniPlayer
         public bool DisableAlbumArt { get; set; } = false;
         public bool DisableTransparency { get; set; } = false;
         public bool EnableTranslucentIco { get; set; } = true;
+        public bool EnableTooltips { get; set; } = true;
 
         [System.Text.Json.Serialization.JsonIgnore]
         public bool IsTransparent => EnableTransparency && !DisableTransparency;
 
         public bool OptimizeTimerFrequencies { get; set; } = false;
         public int TopmostIntervalMs { get; set; } = 500;
+        public bool DisableTopmostTimer { get; set; } = false;
         public int PeakMeterIntervalMs { get; set; } = 30;
 
         public LayoutStyle Layout { get; set; } = LayoutStyle.Expanded;

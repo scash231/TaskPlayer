@@ -59,6 +59,7 @@ namespace TaskbarMiniPlayer.Views
                 // Topmost Interval
                 SldTopmostInterval.Value = ClampValue(_settings.TopmostIntervalMs, SldTopmostInterval.Minimum, SldTopmostInterval.Maximum);
                 TxtTopmostInterval.Text = _settings.TopmostIntervalMs.ToString();
+                ChkDisableTopmostTimer.IsChecked = _settings.DisableTopmostTimer;
 
                 // Peak Meter Interval
                 SldPeakMeterInterval.Value = ClampValue(_settings.PeakMeterIntervalMs, SldPeakMeterInterval.Minimum, SldPeakMeterInterval.Maximum);
@@ -235,6 +236,17 @@ namespace TaskbarMiniPlayer.Views
 
         private void TxtTopmostInterval_TextChanged(object sender, TextChangedEventArgs e) =>
             OnTextChanged(TxtTopmostInterval, SldTopmostInterval, (v) => _settings.TopmostIntervalMs = (int)v);
+
+        private void ChkDisableTopmostTimer_Changed(object sender, RoutedEventArgs e)
+        {
+            if (!_isInitialized || _isUpdating) return;
+            _settings.DisableTopmostTimer = ChkDisableTopmostTimer.IsChecked == true;
+            _settings.Save();
+            if (Application.Current.MainWindow is MainWindow mainWin)
+            {
+                mainWin.ReloadSettings();
+            }
+        }
 
         private void SldPeakMeterInterval_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e) =>
             OnSliderChanged(SldPeakMeterInterval, TxtPeakMeterInterval, (v) => _settings.PeakMeterIntervalMs = (int)v);

@@ -24,6 +24,7 @@ namespace TaskbarMiniPlayer
         private StackPanel? _activePanel;
         private bool _suppressProfileChange;
         private readonly bool _spawnBelow;
+        private int _helpSlideIndex = 0;
 
         // Profile inline-edit state
         private enum ProfileEditMode { None, Save, Rename }
@@ -86,7 +87,6 @@ namespace TaskbarMiniPlayer
             RefreshProfileList();
 
             ApplyCustomAccent(_settings.CustomAccentColor);
-            CmbAccentColor.SelectionChanged += CmbAccentColor_SelectionChanged;
         }
 
         private void PopulateFromSettings(Settings s)
@@ -125,9 +125,6 @@ namespace TaskbarMiniPlayer
             ChkSmartResize.IsChecked = s.EnableSmartResize;
  
             // Appearance & Color
-            SelectComboByTag(CmbTheme, s.Theme.ToString());
-            SelectComboByTag(CmbAccentColor, s.CustomAccentColor);
- 
             // Visuals
             ChkEnableTransparency.IsChecked = s.EnableTransparency;
             RowBackgroundOpacity.IsEnabled = s.EnableTransparency;
@@ -157,6 +154,7 @@ namespace TaskbarMiniPlayer
              ChkDisableTransparency.IsChecked = s.DisableTransparency;
              ChkOptimizeTimerFrequencies.IsChecked = s.OptimizeTimerFrequencies;
              ChkEnableTranslucentIco.IsChecked = s.EnableTranslucentIco;
+             ChkTooltips.IsChecked = s.EnableTooltips;
  
             // Hotkeys
             SetHotkeyButton(BtnPlayPauseHotkey, s.PlayPauseHotkeyKey);
@@ -500,12 +498,6 @@ namespace TaskbarMiniPlayer
  
             if (CmbLayout.SelectedItem is ComboBoxItem cbiLayout && Enum.TryParse(cbiLayout.Tag.ToString(), out LayoutStyle ls))
                 _settings.Layout = ls;
- 
-            if (CmbTheme.SelectedItem is ComboBoxItem cbiTheme && Enum.TryParse(cbiTheme.Tag.ToString(), out AppTheme theme))
-                _settings.Theme = theme;
- 
-            if (CmbAccentColor.SelectedItem is ComboBoxItem cbiAccent)
-                _settings.CustomAccentColor = cbiAccent.Tag?.ToString() ?? "#0078D7";
 
             _settings.ButtonSize = (int)SldButtonSize.Value;
             _settings.ButtonGap = (int)SldButtonGap.Value;
@@ -551,6 +543,7 @@ namespace TaskbarMiniPlayer
              _settings.DisableTransparency = ChkDisableTransparency.IsChecked == true;
              _settings.OptimizeTimerFrequencies = ChkOptimizeTimerFrequencies.IsChecked == true;
              _settings.EnableTranslucentIco = ChkEnableTranslucentIco.IsChecked == true;
+             _settings.EnableTooltips = ChkTooltips.IsChecked == true;
  
              _settings.ExpertMode = ChkExpertMode.IsChecked == true;
         }
@@ -816,17 +809,7 @@ namespace TaskbarMiniPlayer
             }
         }
 
-        private void CmbAccentColor_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (CmbAccentColor.SelectedItem is ComboBoxItem cbi)
-            {
-                var colorHex = cbi.Tag?.ToString();
-                if (!string.IsNullOrEmpty(colorHex))
-                {
-                    ApplyCustomAccent(colorHex);
-                }
-            }
-        }
+
 
         private void ApplyCustomAccent(string colorHex)
         {
@@ -844,6 +827,90 @@ namespace TaskbarMiniPlayer
             {
                 OpenDevWindow();
             }
+        }
+
+        private void OpenTranslucentIco_Click(object sender, RoutedEventArgs e)
+        {
+            foreach (Window window in System.Windows.Application.Current.Windows)
+            {
+                if (window is TranslucentIcoWindow existingWindow)
+                {
+                    if (existingWindow.WindowState == WindowState.Minimized)
+                        existingWindow.WindowState = WindowState.Normal;
+                    existingWindow.Activate();
+                    return;
+                }
+            }
+
+            var button = (System.Windows.Controls.Button)sender;
+            var buttonPos = button.PointToScreen(new Point(0, 0));
+
+            double dpiScale = 1.0;
+            try
+            {
+                dpiScale = System.Windows.Media.VisualTreeHelper.GetDpi(this).PixelsPerDip;
+            }
+            catch { }
+
+            double logicalLeft = buttonPos.X / dpiScale;
+            double logicalTop = buttonPos.Y / dpiScale;
+            double logicalWidth = button.ActualWidth;
+            double logicalHeight = button.ActualHeight;
+
+            var rect = new Rect(logicalLeft, logicalTop, logicalWidth, logicalHeight);
+            var translucentIcoWindow = new TranslucentIcoWindow(rect, this);
+            translucentIcoWindow.Show();
+        }
+
+        private void Help_Click(object sender, RoutedEventArgs e)
+        {
+            _helpSlideIndex = 0;
+            HelpOverlay.Visibility = Visibility.Visible;
+            UpdateHelpUI();
+        }
+
+        private void CloseHelp_Click(object sender, RoutedEventArgs e)
+        {
+            HelpOverlay.Visibility = Visibility.Collapsed;
+        }
+
+        private void PrevHelp_Click(object sender, RoutedEventArgs e)
+        {
+            if (_helpSlideIndex > 0)
+            {
+                _helpSlideIndex--;
+                UpdateHelpUI();
+            }
+        }
+
+        private void NextHelp_Click(object sender, RoutedEventArgs e)
+        {
+            if (_helpSlideIndex < 2)
+            {
+                _helpSlideIndex++;
+                UpdateHelpUI();
+            }
+        }
+
+        private void UpdateHelpUI()
+        {
+            HelpSlide1.Visibility = _helpSlideIndex == 0 ? Visibility.Visible : Visibility.Collapsed;
+            HelpSlide2.Visibility = _helpSlideIndex == 1 ? Visibility.Visible : Visibility.Collapsed;
+            HelpSlide3.Visibility = _helpSlideIndex == 2 ? Visibility.Visible : Visibility.Collapsed;
+
+            BtnPrevHelp.IsEnabled = _helpSlideIndex > 0;
+            BtnNextHelp.IsEnabled = _helpSlideIndex < 2;
+
+            var accentBrush = TryFindResource("Accent") as System.Windows.Media.Brush ?? System.Windows.Media.Brushes.DodgerBlue;
+            var textSecBrush = TryFindResource("TextSec") as System.Windows.Media.Brush ?? System.Windows.Media.Brushes.Gray;
+
+            Dot1.Opacity = _helpSlideIndex == 0 ? 1.0 : 0.4;
+            Dot2.Opacity = _helpSlideIndex == 1 ? 1.0 : 0.4;
+            Dot3.Opacity = _helpSlideIndex == 2 ? 1.0 : 0.4;
+
+            Dot1.Fill = _helpSlideIndex == 0 ? accentBrush : textSecBrush;
+            Dot2.Fill = _helpSlideIndex == 1 ? accentBrush : textSecBrush;
+            Dot3.Fill = _helpSlideIndex == 2 ? accentBrush : textSecBrush;
         }
     }
 }

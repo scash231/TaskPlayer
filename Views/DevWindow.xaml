@@ -1,7 +1,7 @@
 <Window x:Class="TaskbarMiniPlayer.Views.DevWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="" Width="600" Height="680"
+        Title="" Width="900" Height="680"
         WindowStartupLocation="CenterScreen" ShowInTaskbar="True" Topmost="True" ResizeMode="CanResize">
 
     <Grid Background="#F0F0F0">
@@ -13,7 +13,7 @@
 
         <Border Grid.Row="0" Background="#E5E5E5" Padding="15" BorderBrush="#CCCCCC" BorderThickness="0,0,0,1">
             <Grid>
-                <TextBlock Text="Dev Panel" FontSize="16" FontWeight="Bold" VerticalAlignment="Center"/>
+                <TextBlock Text="Taskbar Mini Player" FontSize="16" FontWeight="Bold" VerticalAlignment="Center"/>
                 <Button Content="Reset to Default" HorizontalAlignment="Right" Click="ResetAllSettings_Click" Padding="10,5"/>
             </Grid>
         </Border>
@@ -40,6 +40,9 @@
                                     <TextBox Grid.Column="2" x:Name="TxtTopmostInterval" VerticalAlignment="Center" Margin="5,0" TextAlignment="Right" TextChanged="TxtTopmostInterval_TextChanged"/>
                                     <Button Grid.Column="3" Content="Default" Click="ResetTopmostInterval_Click" Padding="4,2" FontSize="11" Margin="2,0"/>
                                 </Grid>
+
+                                <!-- Disable Topmost Timer -->
+                                <CheckBox x:Name="ChkDisableTopmostTimer" Content="Disable Topmost Timer" Margin="0,0,0,6" Checked="ChkDisableTopmostTimer_Changed" Unchecked="ChkDisableTopmostTimer_Changed" FontWeight="SemiBold"/>
 
                                 <!-- Peak Meter Interval -->
                                 <Grid Margin="0,6">
