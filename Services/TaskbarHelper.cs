@@ -170,7 +170,7 @@ namespace TaskbarMiniPlayer
                 {
                     Win32.SetWindowLongPtr(hwnd, Win32.GWL_HWNDPARENT, taskbar);
                 }
-                catch { }
+                catch (Exception ex) { Log.Warn($"[TaskbarHelper] Failed to set window parent: {ex.Message}"); }
             }
 
             Win32.GetWindowRect(taskbar, out var tbRect);

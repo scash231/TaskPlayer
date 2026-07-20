@@ -1,7 +1,7 @@
+// Translucent icon overlay settings and savable profiles.
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text.Json;
 
 namespace TaskbarMiniPlayer
@@ -12,6 +12,9 @@ namespace TaskbarMiniPlayer
         public string Layer { get; set; } = "listview";
         public bool LaunchOnStartup { get; set; } = false;
         public string? ActiveProfileName { get; set; }
+
+        // ── Profile manager (shared logic via ProfileManager<T>) ──
+        private static readonly ProfileManager<TranslucentIcoSettings> _profiles = new(GetProfilesDir());
 
         private static string GetSettingsPath()
         {
@@ -42,7 +45,7 @@ namespace TaskbarMiniPlayer
                     return JsonSerializer.Deserialize<TranslucentIcoSettings>(json) ?? new TranslucentIcoSettings();
                 }
             }
-            catch { }
+            catch (Exception ex) { Log.Error("[TranslucentIcoSettings] Failed to load settings", ex); }
             return new TranslucentIcoSettings();
         }
 
@@ -53,83 +56,15 @@ namespace TaskbarMiniPlayer
                 var json = JsonSerializer.Serialize(this, _jsonOptions);
                 File.WriteAllText(GetSettingsPath(), json);
             }
-            catch { }
+            catch (Exception ex) { Log.Error("[TranslucentIcoSettings] Failed to save settings", ex); }
         }
 
-        // ── Profile Management ──
+        // ── Profile Management (delegated to ProfileManager<T>) ──
 
-        public void SaveAsProfile(string name)
-        {
-            try
-            {
-                var path = Path.Combine(GetProfilesDir(), SanitizeFileName(name) + ".json");
-                var json = JsonSerializer.Serialize(this, _jsonOptions);
-                File.WriteAllText(path, json);
-            }
-            catch { }
-        }
-
-        public static TranslucentIcoSettings? LoadProfile(string name)
-        {
-            try
-            {
-                var path = Path.Combine(GetProfilesDir(), SanitizeFileName(name) + ".json");
-                if (File.Exists(path))
-                {
-                    var json = File.ReadAllText(path);
-                    return JsonSerializer.Deserialize<TranslucentIcoSettings>(json);
-                }
-            }
-            catch { }
-            return null;
-        }
-
-        public static List<string> GetProfileNames()
-        {
-            try
-            {
-                var dir = GetProfilesDir();
-                return Directory.GetFiles(dir, "*.json")
-                    .Select(f => Path.GetFileNameWithoutExtension(f))
-                    .OrderBy(n => n, StringComparer.OrdinalIgnoreCase)
-                    .ToList();
-            }
-            catch { }
-            return new List<string>();
-        }
-
-        public static bool DeleteProfile(string name)
-        {
-            try
-            {
-                var path = Path.Combine(GetProfilesDir(), SanitizeFileName(name) + ".json");
-                if (File.Exists(path)) { File.Delete(path); return true; }
-            }
-            catch { }
-            return false;
-        }
-
-        public static bool RenameProfile(string oldName, string newName)
-        {
-            try
-            {
-                var dir = GetProfilesDir();
-                var oldPath = Path.Combine(dir, SanitizeFileName(oldName) + ".json");
-                var newPath = Path.Combine(dir, SanitizeFileName(newName) + ".json");
-                if (File.Exists(oldPath) && !File.Exists(newPath))
-                {
-                    File.Move(oldPath, newPath);
-                    return true;
-                }
-            }
-            catch { }
-            return false;
-        }
-
-        private static string SanitizeFileName(string name)
-        {
-            var invalid = Path.GetInvalidFileNameChars();
-            return string.Concat(name.Select(c => invalid.Contains(c) ? '_' : c));
-        }
+        public void SaveAsProfile(string name) => _profiles.SaveAsProfile(this, name);
+        public static TranslucentIcoSettings? LoadProfile(string name) => _profiles.LoadProfile(name);
+        public static List<string> GetProfileNames() => _profiles.GetProfileNames();
+        public static bool DeleteProfile(string name) => _profiles.DeleteProfile(name);
+        public static bool RenameProfile(string oldName, string newName) => _profiles.RenameProfile(oldName, newName);
     }
 }

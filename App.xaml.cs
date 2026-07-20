@@ -55,7 +55,7 @@ namespace TaskbarMiniPlayer
                         if (icon != null) _notifyIcon.Icon = icon;
                     }
                 }
-                catch { }
+                catch (Exception ex) { Log.Warn($"[App] Failed to extract associated icon: {ex.Message}"); }
 
                 _notifyIcon.Visible = true;
                 _notifyIcon.Text = "TaskPlayer";

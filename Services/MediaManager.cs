@@ -84,17 +84,17 @@ namespace TaskbarMiniPlayer
                     UpdateCurrentSession();
                 }
             }
-            catch { }
+            catch (Exception ex) { Log.Error("[MediaManager] Failed to initialize SMTC", ex); }
         }
 
         private void OnCurrentSessionChanged(GlobalSystemMediaTransportControlsSessionManager sender, CurrentSessionChangedEventArgs args)
         {
-            System.Windows.Application.Current.Dispatcher.Invoke(() => UpdateCurrentSession());
+            System.Windows.Application.Current.Dispatcher.InvokeAsync(() => UpdateCurrentSession());
         }
 
         private void OnSessionsChanged(GlobalSystemMediaTransportControlsSessionManager sender, SessionsChangedEventArgs args)
         {
-            System.Windows.Application.Current.Dispatcher.Invoke(() => UpdateCurrentSession(keepIndex: true));
+            System.Windows.Application.Current.Dispatcher.InvokeAsync(() => UpdateCurrentSession(keepIndex: true));
         }
 
         private void UpdateCurrentSession(bool keepIndex = false)
@@ -240,7 +240,7 @@ namespace TaskbarMiniPlayer
                     }
                 }
             }
-            catch { }
+            catch (Exception ex) { Log.Error("[MediaManager] Error updating media properties", ex); }
             finally
             {
                 MediaStateChanged?.Invoke();
@@ -258,7 +258,6 @@ namespace TaskbarMiniPlayer
                     session.LastUpdatedTime = DateTimeOffset.UtcNow;
                     MediaStateChanged?.Invoke();
                 }
-                await Task.CompletedTask;
                 return;
             }
 
@@ -276,7 +275,6 @@ namespace TaskbarMiniPlayer
             if (IsSimulationEnabled)
             {
                 SwitchSession(-1);
-                await Task.CompletedTask;
                 return;
             }
 
@@ -291,7 +289,6 @@ namespace TaskbarMiniPlayer
             if (IsSimulationEnabled)
             {
                 SwitchSession(1);
-                await Task.CompletedTask;
                 return;
             }
 
@@ -329,8 +326,9 @@ namespace TaskbarMiniPlayer
                     LastUpdatedTime = original.LastUpdatedTime
                 };
             }
-            catch
+            catch (Exception ex)
             {
+                Log.Warn($"[MediaManager] Failed to get timeline properties: {ex.Message}");
                 return null;
             }
         }
@@ -377,8 +375,9 @@ namespace TaskbarMiniPlayer
                     return position.TotalMilliseconds / timeline.EndTime.TotalMilliseconds;
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                Log.Warn($"[MediaManager] Failed to get timeline progress: {ex.Message}");
                 return 0;
             }
         }
@@ -412,7 +411,7 @@ namespace TaskbarMiniPlayer
                     processTarget = Path.GetFileNameWithoutExtension(appId);
                 }
             }
-            catch { }
+            catch (Exception ex) { Log.Warn($"[MediaManager] Failed to parse app ID '{appId}': {ex.Message}"); }
 
             var processes = System.Diagnostics.Process.GetProcesses();
             foreach (var proc in processes)
@@ -443,7 +442,7 @@ namespace TaskbarMiniPlayer
                         return;
                     }
                 }
-                catch { }
+                catch (Exception ex) { Log.Warn($"[MediaManager] Error checking process for focus: {ex.Message}"); }
             }
         }
     }

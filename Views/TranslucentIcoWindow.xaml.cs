@@ -48,7 +48,7 @@ namespace TaskbarMiniPlayer
                 var mainSettings = Settings.Load();
                 ApplyCustomAccent(mainSettings.CustomAccentColor);
             }
-            catch { }
+            catch (Exception ex) { Log.Warn($"[TranslucentIcoWindow] Failed to apply custom accent: {ex.Message}"); }
 
             Loaded += OnLoaded;
         }
@@ -378,7 +378,7 @@ namespace TaskbarMiniPlayer
                 var color = (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(colorHex);
                 Resources["Accent"] = new SolidColorBrush(color);
             }
-            catch { }
+            catch (Exception ex) { Log.Warn($"[TranslucentIcoWindow] Failed to convert accent color '{colorHex}': {ex.Message}"); }
         }
     }
 }

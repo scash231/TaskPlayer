@@ -1,41 +1,68 @@
 // Main player taskbar overlay window.
 using System;
-using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Threading;
-using System.Windows.Controls;
 using System.Windows.Media.Animation;
 using System.Collections.Generic;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Linq;
+using TaskbarMiniPlayer.Services;
 using Color = System.Windows.Media.Color;
-using NAudio.CoreAudioApi;
+using ColorConverter = System.Windows.Media.ColorConverter;
+using MouseEventArgs = System.Windows.Input.MouseEventArgs;
 
 namespace TaskbarMiniPlayer
 {
     public partial class MainWindow : Window
     {
+        // ── Layout Constants ──
+        private const double ButtonPanelRightMargin = 14;
+        private const double SessionIndicatorLeftMargin = 14;
+        private const double SessionIndicatorWidth = 4;
+        private const double SessionIndicatorTotalWidth = 18; // margin + width
+        private const double AlbumArtWidth = 32;
+        private const double AlbumArtLeftMarginWithIndicator = 8;
+        private const double AlbumArtLeftMarginDefault = 14;
+        private const double AlbumArtRightMargin = 4;
+        private const double MetadataPanelLeftMargin = 4;
+        private const double MetadataPanelRightMargin = 8;
+        private const double MetadataPanelLeftMarginNoArt = 14;
+        private const double SafetyPadding = 16;
+        private const double CompactSidePadding = 30;
+        private const double CornerRadius = 16;
+
+        // ── Core services ──
         private readonly MediaManager _mediaManager;
         public MediaManager MediaManagerInstance => _mediaManager;
         private Settings _settings;
         private IntPtr _winEventHook;
         private Win32.WinEventDelegate _winEventDelegate;
+        private HwndSource? _source;
+        private HotkeyManager? _hotkeyManager;
+        private readonly ColorExtractor _colorExtractor = new();
+
+        // Extracted services
+        private MarqueeController? _marqueeController;
+        private VolumeController? _volumeController;
+        private TimelineBorderAnimator? _timelineBorderAnimator;
+
+        // ── Timers ──
         private DispatcherTimer _autoHideTimer;
         private DispatcherTimer _zOrderTimer;
         private DispatcherTimer _timelineTimer;
+
+        // ── State ──
         private bool _isAutoHidden = false;
         private bool _wasHiddenForFullscreen = false;
-        private HwndSource? _source;
-        private MMDevice? _audioDevice;
-        private bool _isDraggingVolume = false;
-        private DispatcherTimer? _peakMeterTimer;
+        private bool _isAnimatingWidth = false;
 
-        // Services
-        private readonly ColorExtractor _colorExtractor = new();
-        private HotkeyManager? _hotkeyManager;
+        /// <summary>
+        /// Helper that returns the app's accent brush, with a safe fallback.
+        /// </summary>
+        private SolidColorBrush AccentBrush =>
+            Resources["Accent"] as SolidColorBrush ?? new SolidColorBrush(Colors.DeepSkyBlue);
 
         public MainWindow()
         {
@@ -50,7 +77,7 @@ namespace TaskbarMiniPlayer
             _autoHideTimer.Tick += AutoHideTimer_Tick;
 
             _zOrderTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(_settings.TopmostIntervalMs) };
-            _zOrderTimer.Tick += (s, e) => 
+            _zOrderTimer.Tick += (s, e) =>
             {
                 EnforceZOrder();
                 Reposition();
@@ -59,13 +86,10 @@ namespace TaskbarMiniPlayer
                 _zOrderTimer.Start();
 
             _timelineTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
-            _timelineTimer.Tick += TimelineTimer_Tick;
+            _timelineTimer.Tick += (s, e) => _timelineBorderAnimator?.Tick(_settings, _mediaManager);
 
-            _peakMeterTimer = new DispatcherTimer(DispatcherPriority.Render);
-            _peakMeterTimer.Interval = TimeSpan.FromMilliseconds(_settings.PeakMeterIntervalMs);
-            _peakMeterTimer.Tick += PeakMeterTimer_Tick;
- 
-            MainBorder.SizeChanged += (s, e) => UpdateTimelineBorder(false);
+            _timelineBorderAnimator = new TimelineBorderAnimator(TimelineBorder, TimelineBorder2, MainBorder);
+            MainBorder.SizeChanged += (s, e) => _timelineBorderAnimator.Update(_settings, _mediaManager, animate: false);
 
             ApplySettings();
         }
@@ -120,7 +144,7 @@ namespace TaskbarMiniPlayer
         private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
             var hwnd = new WindowInteropHelper(this).Handle;
-            
+
             int exStyle = Win32.GetWindowLong(hwnd, Win32.GWL_EXSTYLE);
             Win32.SetWindowLong(hwnd, Win32.GWL_EXSTYLE, exStyle | Win32.WS_EX_NOACTIVATE | Win32.WS_EX_TOOLWINDOW);
 
@@ -133,14 +157,28 @@ namespace TaskbarMiniPlayer
 
             _source = HwndSource.FromHwnd(hwnd);
             _source?.AddHook(HwndHook);
- 
+
             _winEventHook = Win32.SetWinEventHook(Win32.EVENT_OBJECT_LOCATIONCHANGE, Win32.EVENT_OBJECT_LOCATIONCHANGE, IntPtr.Zero, _winEventDelegate, 0, 0, Win32.WINEVENT_OUTOFCONTEXT);
 
+            // Initialize extracted services
+            _marqueeController = new MarqueeController(
+                TxtTitle, TxtArtist, TitleGrid, TitleCanvas, ArtistCanvas, ArtistGrid,
+                isHoveringFunc: () => MainBorder.IsMouseOver || (VolumePopup.IsOpen && VolumePopupGrid.IsMouseOver),
+                dpiScaleFunc: () => VisualTreeHelper.GetDpi(this).PixelsPerDip);
+
+            _volumeController = new VolumeController(
+                VolumePopup, VolumePopupGrid, VolumePopupTranslate,
+                VolumeBorder, VolumeBorderScale, VolumeFill, VolumeTrack,
+                VolumeIcon, VolumeIconScale,
+                isTaskbarAtTop: IsTaskbarAtTop);
+            _volumeController.Initialize(_settings.PeakMeterIntervalMs);
+
             await _mediaManager.InitializeAsync();
- 
+
             if (_settings.AutoPlayOnLaunch && !_mediaManager.IsPlaying)
             {
-                try { await _mediaManager.PlayPauseAsync(); } catch { }
+                try { await _mediaManager.PlayPauseAsync(); }
+                catch (Exception ex) { Log.Warn($"[MainWindow] Auto-play failed: {ex.Message}"); }
             }
 
             ApplyHotkeys();
@@ -154,28 +192,15 @@ namespace TaskbarMiniPlayer
                     var translucentSettings = TranslucentIcoSettings.Load();
                     TranslucentIcoService.SetDesktopIconOpacity(translucentSettings.Opacity, translucentSettings.Layer);
                 }
-                catch { }
+                catch (Exception ex) { Log.Error("[MainWindow] Failed to apply TranslucentIco on startup", ex); }
             }
-
-            try
-            {
-                var enumerator = new MMDeviceEnumerator();
-                _audioDevice = enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
-                _audioDevice.AudioEndpointVolume.OnVolumeNotification += AudioEndpointVolume_OnVolumeNotification;
-                UpdateVolumeUI(_audioDevice.AudioEndpointVolume.MasterVolumeLevelScalar);
-            }
-            catch { }
         }
 
         private void Window_Closed(object sender, EventArgs e)
         {
             _timelineTimer.Stop();
             _hotkeyManager?.UnregisterAll();
-            if (_audioDevice != null)
-            {
-                _audioDevice.AudioEndpointVolume.OnVolumeNotification -= AudioEndpointVolume_OnVolumeNotification;
-                _audioDevice.Dispose();
-            }
+            _volumeController?.Dispose();
 
             if (_winEventHook != IntPtr.Zero)
             {
@@ -198,7 +223,7 @@ namespace TaskbarMiniPlayer
                     var translucentSettings = TranslucentIcoSettings.Load();
                     TranslucentIcoService.SetDesktopIconOpacity(translucentSettings.Opacity, translucentSettings.Layer);
                 }
-                catch { }
+                catch (Exception ex) { Log.Error("[MainWindow] Failed to apply TranslucentIco on reload", ex); }
             }
             else
             {
@@ -207,7 +232,7 @@ namespace TaskbarMiniPlayer
                     var translucentSettings = TranslucentIcoSettings.Load();
                     TranslucentIcoService.SetDesktopIconOpacity(255, translucentSettings.Layer);
                 }
-                catch { }
+                catch (Exception ex) { Log.Error("[MainWindow] Failed to reset TranslucentIco on reload", ex); }
             }
 
             if (_zOrderTimer != null)
@@ -218,10 +243,7 @@ namespace TaskbarMiniPlayer
                 else
                     _zOrderTimer.Start();
             }
-            if (_peakMeterTimer != null)
-            {
-                _peakMeterTimer.Interval = TimeSpan.FromMilliseconds(_settings.PeakMeterIntervalMs);
-            }
+            _volumeController?.SetPeakMeterInterval(_settings.PeakMeterIntervalMs);
         }
 
         public void ApplyHotkeys()
@@ -235,19 +257,20 @@ namespace TaskbarMiniPlayer
             return IntPtr.Zero;
         }
 
+        // ══════ Media State Handling ══════
+
         private void OnMediaStateChanged()
         {
-            Dispatcher.Invoke(() =>
+            Dispatcher.InvokeAsync(() =>
             {
                 BtnPlay.Content = _mediaManager?.IsPlaying == true ? "\uE769" : "\uE768";
 
-                
                 string? newTitle = _mediaManager?.Title;
                 if (string.IsNullOrEmpty(newTitle)) newTitle = "Unknown";
                 string? newArtist = _mediaManager?.Artist;
                 if (string.IsNullOrEmpty(newArtist)) newArtist = "Unknown";
                 bool songChanged = TxtTitle.Text != newTitle || TxtArtist.Text != newArtist;
-                
+
                 byte alpha = _settings.IsTransparent ? (byte)(_settings.BackgroundOpacity * 255) : (byte)255;
                 double tintStrength = _settings.AdaptiveTintStrength;
 
@@ -256,7 +279,7 @@ namespace TaskbarMiniPlayer
                 {
                     ImgAlbumArt.Source = bmp;
                     var (color1, color2) = _colorExtractor.GetCachedGradientColors(bmp);
-                    
+
                     var blended1 = ColorExtractor.Blend(Color.FromRgb(31, 31, 36), color1, tintStrength);
                     var blended2 = ColorExtractor.Blend(Color.FromRgb(18, 18, 20), color2, tintStrength);
 
@@ -290,10 +313,10 @@ namespace TaskbarMiniPlayer
                 else
                 {
                     ImgAlbumArt.Source = null;
-                    
+
                     var fallback1 = Color.FromArgb(alpha, 31, 31, 36);
                     var fallback2 = Color.FromArgb(alpha, 18, 18, 20);
-                    
+
                     if (_settings.DisableFluidAnimations)
                     {
                         MainBgStop1.BeginAnimation(GradientStop.ColorProperty, null);
@@ -314,9 +337,8 @@ namespace TaskbarMiniPlayer
                         Animations.FluidMotion.AnimateGradientStop(VolumeBgStop2, fallback2);
                     }
 
-                    var defaultBrush = Resources["Accent"] as System.Windows.Media.SolidColorBrush ?? new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.DeepSkyBlue);
-                    TimelineBorder.Stroke = defaultBrush;
-                    TimelineBorder2.Stroke = defaultBrush;
+                    TimelineBorder.Stroke = AccentBrush;
+                    TimelineBorder2.Stroke = AccentBrush;
                 }
 
                 if (_mediaManager?.IsPlaying == true)
@@ -356,7 +378,7 @@ namespace TaskbarMiniPlayer
                         AnimateToWidth(targetWidth);
 
                         // Perform marquee layout updates immediately using final target width
-                        UpdateMarquee(targetMetadataWidth);
+                        _marqueeController?.Update(_settings, _mediaManager, _isAnimatingWidth, targetMetadataWidth);
 
                         // Reset translation for slide-up
                         MetadataTranslate.Y = -8.0;
@@ -396,7 +418,7 @@ namespace TaskbarMiniPlayer
                     {
                         _timelineTimer.Stop();
                     }
-                    UpdateTimelineBorder(true);
+                    _timelineBorderAnimator?.Update(_settings, _mediaManager, animate: true);
                 }
             });
         }
@@ -411,7 +433,7 @@ namespace TaskbarMiniPlayer
                 var brushes = new List<SolidColorBrush>();
                 for (int i = 0; i < _mediaManager.TotalSessions; i++)
                 {
-                    brushes.Add(new SolidColorBrush(i == _mediaManager.CurrentSessionIndex ? Colors.White : System.Windows.Media.Color.FromArgb(0x40, 0xFF, 0xFF, 0xFF)));
+                    brushes.Add(new SolidColorBrush(i == _mediaManager.CurrentSessionIndex ? Colors.White : Color.FromArgb(0x40, 0xFF, 0xFF, 0xFF)));
                 }
                 SessionIndicator.ItemsSource = brushes;
                 SessionIndicator.Visibility = Visibility.Visible;
@@ -427,143 +449,7 @@ namespace TaskbarMiniPlayer
             }
         }
 
-        private void UpdateMarquee(double? overrideContainerWidth = null)
-        {
-            if (_isAnimatingWidth && overrideContainerWidth == null) return;
-
-            TxtTitle.BeginAnimation(Canvas.LeftProperty, null);
-            TxtArtist.BeginAnimation(Canvas.LeftProperty, null);
-            TxtTitle.BeginAnimation(UIElement.OpacityProperty, null);
-            TxtArtist.BeginAnimation(UIElement.OpacityProperty, null);
-            
-            Canvas.SetLeft(TxtTitle, 0);
-            Canvas.SetLeft(TxtArtist, 0);
-            TxtTitle.Opacity = 1;
-            TxtArtist.Opacity = 1;
-
-            bool isHovering = MainBorder.IsMouseOver || (VolumePopup.IsOpen && VolumePopupGrid.IsMouseOver);
-            bool shouldScroll = _settings.ScrollLongText && !_settings.DisableTextScrolling;
-            
-            if (shouldScroll && _settings.ScrollBehavior == "Hover" && !isHovering)
-            {
-                shouldScroll = false;
-            }
-
-            string titleText = string.IsNullOrEmpty(_mediaManager.Title) ? "Unknown" : _mediaManager.Title;
-            string artistText = string.IsNullOrEmpty(_mediaManager.Artist) ? "Unknown" : _mediaManager.Artist;
-
-            double titleW = GetTextWidth(TxtTitle, titleText);
-            double artistW = GetTextWidth(TxtArtist, artistText);
-
-            double containerWidth = overrideContainerWidth ?? (TitleGrid.ActualWidth > 0 ? TitleGrid.ActualWidth : 120.0);
-
-            if (shouldScroll && titleW > containerWidth && containerWidth > 0)
-            {
-                TitleCanvas.HorizontalAlignment = System.Windows.HorizontalAlignment.Left;
-                TitleCanvas.ClearValue(FrameworkElement.WidthProperty);
-
-                string spacer = "        ";
-                TxtTitle.Text = titleText + spacer + titleText;
-                double singleWidth = GetTextWidth(TxtTitle, titleText + spacer);
-                StartMarqueeAnimation(TxtTitle, singleWidth, containerWidth);
-            }
-            else
-            {
-                TxtTitle.Text = titleText;
-                if (_settings.HideArtist)
-                {
-                    TxtTitle.Width = double.NaN;
-                    TitleCanvas.HorizontalAlignment = System.Windows.HorizontalAlignment.Center;
-                    TitleCanvas.Width = titleW;
-                    Canvas.SetLeft(TxtTitle, 0);
-                }
-                else
-                {
-                    TxtTitle.Width = containerWidth > 0 ? containerWidth : double.NaN;
-                    TitleCanvas.HorizontalAlignment = System.Windows.HorizontalAlignment.Left;
-                    TitleCanvas.ClearValue(FrameworkElement.WidthProperty);
-                }
-            }
-
-            if (shouldScroll && artistW > containerWidth && containerWidth > 0)
-            {
-                string spacer = "        ";
-                TxtArtist.Text = artistText + spacer + artistText;
-                double singleWidth = GetTextWidth(TxtArtist, artistText + spacer);
-                StartMarqueeAnimation(TxtArtist, singleWidth, containerWidth);
-            }
-            else
-            {
-                TxtArtist.Text = artistText;
-                TxtArtist.Width = containerWidth > 0 ? containerWidth : double.NaN;
-            }
-        }
-
-        private double GetTextWidth(TextBlock tb, string text)
-        {
-            var typeface = new Typeface(tb.FontFamily, tb.FontStyle, tb.FontWeight, tb.FontStretch);
-            var formattedText = new FormattedText(
-                text,
-                System.Globalization.CultureInfo.CurrentCulture,
-                System.Windows.FlowDirection.LeftToRight,
-                typeface,
-                tb.FontSize,
-                System.Windows.Media.Brushes.Black,
-                VisualTreeHelper.GetDpi(this).PixelsPerDip);
-            return formattedText.Width;
-        }
-
-        private void StartMarqueeAnimation(TextBlock txt, double scrollLimit, double containerWidth)
-        {
-            double speed = _settings.ScrollSpeed > 0 ? _settings.ScrollSpeed : 30.0;
-            double delay = _settings.ScrollDelay >= 0 ? _settings.ScrollDelay : 1.5;
-            string behavior = _settings.ScrollBehavior ?? "Marquee";
-
-            var sb = new Storyboard { RepeatBehavior = RepeatBehavior.Forever };
-
-            if (behavior == "PingPong")
-            {
-                double overflow = scrollLimit - containerWidth;
-                if (overflow <= 0) overflow = 20.0;
-
-                double scrollDuration = Math.Max(1.0, overflow / speed);
-                double totalDuration = delay + scrollDuration + delay + scrollDuration;
-
-                var moveAnim = new DoubleAnimationUsingKeyFrames();
-                Storyboard.SetTarget(moveAnim, txt);
-                Storyboard.SetTargetProperty(moveAnim, new PropertyPath("(Canvas.Left)"));
-
-                moveAnim.KeyFrames.Add(new LinearDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.Zero)));
-                moveAnim.KeyFrames.Add(new LinearDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(delay))));
-                moveAnim.KeyFrames.Add(new LinearDoubleKeyFrame(-overflow, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(delay + scrollDuration))));
-                moveAnim.KeyFrames.Add(new LinearDoubleKeyFrame(-overflow, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(delay + scrollDuration + delay))));
-                moveAnim.KeyFrames.Add(new LinearDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(delay + scrollDuration + delay + scrollDuration))));
-
-                sb.Children.Add(moveAnim);
-                sb.Duration = new Duration(TimeSpan.FromSeconds(totalDuration));
-            }
-            else // "Marquee" or "Hover" (loop infinitely)
-            {
-                double scrollDuration = Math.Max(1.0, scrollLimit / speed);
-                double totalDuration = delay + scrollDuration;
-
-                var moveAnim = new DoubleAnimationUsingKeyFrames();
-                Storyboard.SetTarget(moveAnim, txt);
-                Storyboard.SetTargetProperty(moveAnim, new PropertyPath("(Canvas.Left)"));
-
-                moveAnim.KeyFrames.Add(new LinearDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.Zero)));
-                moveAnim.KeyFrames.Add(new LinearDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(delay))));
-                moveAnim.KeyFrames.Add(new LinearDoubleKeyFrame(-scrollLimit, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(delay + scrollDuration))));
-                moveAnim.KeyFrames.Add(new DiscreteDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(delay + scrollDuration))));
-
-                sb.Children.Add(moveAnim);
-                sb.Duration = new Duration(TimeSpan.FromSeconds(totalDuration));
-            }
-
-            sb.Begin();
-        }
-
-
+        // ══════ Auto-Hide ══════
 
         private void ResetAutoHideTimer()
         {
@@ -603,6 +489,8 @@ namespace TaskbarMiniPlayer
             }
         }
 
+        // ══════ Settings Application ══════
+
         public void ApplySettings(bool animate = false)
         {
             if (_zOrderTimer != null)
@@ -620,10 +508,10 @@ namespace TaskbarMiniPlayer
 
             try
             {
-                var accentColor = (Color)System.Windows.Media.ColorConverter.ConvertFromString(_settings.CustomAccentColor);
+                var accentColor = (Color)ColorConverter.ConvertFromString(_settings.CustomAccentColor);
                 Resources["Accent"] = new SolidColorBrush(accentColor);
             }
-            catch { }
+            catch (Exception ex) { Log.Warn($"[MainWindow] Failed to parse accent color '{_settings.CustomAccentColor}': {ex.Message}"); }
 
             if (_settings.BorderMode == BorderMode.None)
             {
@@ -666,12 +554,12 @@ namespace TaskbarMiniPlayer
                 {
                     try
                     {
-                        var accentColor = (Color)System.Windows.Media.ColorConverter.ConvertFromString(_settings.CustomAccentColor);
+                        var accentColor = (Color)ColorConverter.ConvertFromString(_settings.CustomAccentColor);
                         strokeBrush = new SolidColorBrush(accentColor);
                     }
                     catch
                     {
-                        strokeBrush = Resources["Accent"] as System.Windows.Media.SolidColorBrush ?? new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.DeepSkyBlue);
+                        strokeBrush = AccentBrush;
                     }
                 }
 
@@ -686,7 +574,7 @@ namespace TaskbarMiniPlayer
                 {
                     _timelineTimer?.Stop();
                 }
-                UpdateTimelineBorder(false);
+                _timelineBorderAnimator?.Update(_settings, _mediaManager!, animate: false);
             }
 
             if (_settings.Layout == LayoutStyle.Compact)
@@ -695,7 +583,7 @@ namespace TaskbarMiniPlayer
                 ColMetadata.Width = new GridLength(0);
                 ImgAlbumArt.Visibility = Visibility.Collapsed;
                 PanelMetadata.Visibility = Visibility.Collapsed;
-                PanelButtons.Margin = new Thickness(14, 0, 14, 0);
+                PanelButtons.Margin = new Thickness(ButtonPanelRightMargin, 0, ButtonPanelRightMargin, 0);
             }
             else if (_settings.Layout == LayoutStyle.Standard)
             {
@@ -703,7 +591,7 @@ namespace TaskbarMiniPlayer
                 ColMetadata.Width = new GridLength(1, GridUnitType.Star);
                 ImgAlbumArt.Visibility = Visibility.Collapsed;
                 PanelMetadata.Visibility = Visibility.Visible;
-                PanelButtons.Margin = new Thickness(0, 0, 14, 0);
+                PanelButtons.Margin = new Thickness(0, 0, ButtonPanelRightMargin, 0);
             }
             else // Expanded
             {
@@ -711,28 +599,28 @@ namespace TaskbarMiniPlayer
                 ColMetadata.Width = new GridLength(1, GridUnitType.Star);
                 ImgAlbumArt.Visibility = Visibility.Visible;
                 PanelMetadata.Visibility = Visibility.Visible;
-                PanelButtons.Margin = new Thickness(0, 0, 14, 0);
+                PanelButtons.Margin = new Thickness(0, 0, ButtonPanelRightMargin, 0);
             }
 
             bool showSessionIndicator = _mediaManager != null && _mediaManager.TotalSessions > 1;
 
             if (showSessionIndicator)
             {
-                SessionIndicator.Margin = new Thickness(14, 0, 0, 0);
-                ImgAlbumArt.Margin = new Thickness(8, 4, 4, 4);
-                PanelMetadata.Margin = new Thickness(4, 0, 8, 0);
+                SessionIndicator.Margin = new Thickness(SessionIndicatorLeftMargin, 0, 0, 0);
+                ImgAlbumArt.Margin = new Thickness(AlbumArtLeftMarginWithIndicator, 4, AlbumArtRightMargin, 4);
+                PanelMetadata.Margin = new Thickness(MetadataPanelLeftMargin, 0, MetadataPanelRightMargin, 0);
             }
             else if (_settings.Layout == LayoutStyle.Expanded)
             {
-                ImgAlbumArt.Margin = new Thickness(14, 4, 4, 4);
-                PanelMetadata.Margin = new Thickness(4, 0, 8, 0);
+                ImgAlbumArt.Margin = new Thickness(AlbumArtLeftMarginDefault, 4, AlbumArtRightMargin, 4);
+                PanelMetadata.Margin = new Thickness(MetadataPanelLeftMargin, 0, MetadataPanelRightMargin, 0);
             }
             else // Standard layout (no album art, no session indicator)
             {
-                PanelMetadata.Margin = new Thickness(14, 0, 8, 0);
+                PanelMetadata.Margin = new Thickness(MetadataPanelLeftMarginNoArt, 0, MetadataPanelRightMargin, 0);
             }
 
-            // Set Window width static maximum. If dynamic sizing is disabled, make Window width match target width.
+            // Set Window width. If dynamic sizing is disabled, use calculated target width.
             double windowWidth = _settings.MaxWidth;
             if (!_settings.EnableDynamicSizing)
             {
@@ -750,16 +638,14 @@ namespace TaskbarMiniPlayer
             {
                 MainBorder.BeginAnimation(WidthProperty, null);
                 MainBorder.Width = targetWidth;
-                UpdateMarquee();
+                _marqueeController?.Update(_settings, _mediaManager, _isAnimatingWidth);
             }
 
             Height = _settings.ButtonSize + 8;
-            
+
             BtnPrev.Width = _settings.ButtonSize;
             BtnPlay.Width = _settings.ButtonSize;
             BtnNext.Width = _settings.ButtonSize;
-
-
 
             if (_settings.ShowPlayer && !_isAutoHidden)
             {
@@ -778,50 +664,50 @@ namespace TaskbarMiniPlayer
             if (IsLoaded) Reposition(true);
         }
 
+        // ══════ Width Calculation ══════
+
         private double CalculateNonTextWidth()
         {
             if (_settings.Layout == LayoutStyle.Compact)
             {
-                double width = (_settings.ButtonSize * 3) + 30;
+                double width = (_settings.ButtonSize * 3) + CompactSidePadding;
                 if (_mediaManager != null && _mediaManager.TotalSessions > 1)
                 {
-                    width += 18;
+                    width += SessionIndicatorTotalWidth;
                 }
                 return width;
             }
 
-            double nonTextWidth = (_settings.ButtonSize * 3) + 14; // buttons + right margin (14)
+            double nonTextWidth = (_settings.ButtonSize * 3) + ButtonPanelRightMargin;
             if (_mediaManager != null && _mediaManager.TotalSessions > 1)
             {
-                nonTextWidth += 14 + 4; // session indicator (14 left margin + 4 width = 18)
+                nonTextWidth += SessionIndicatorTotalWidth;
             }
 
             if (_settings.Layout == LayoutStyle.Expanded)
             {
                 if (_mediaManager != null && _mediaManager.TotalSessions > 1)
                 {
-                    nonTextWidth += 8 + 32 + 4; // album art (8 left margin + 32 width + 4 right margin = 44)
+                    nonTextWidth += AlbumArtLeftMarginWithIndicator + AlbumArtWidth + AlbumArtRightMargin;
                 }
                 else
                 {
-                    nonTextWidth += 14 + 32 + 4; // album art (14 left margin + 32 width + 4 right margin = 50)
+                    nonTextWidth += AlbumArtLeftMarginDefault + AlbumArtWidth + AlbumArtRightMargin;
                 }
             }
 
-            // Metadata panel margins (4 left + 8 right = 12 or 14 left + 8 right = 22) + safety padding
+            // Metadata panel margins + safety padding
             if (_mediaManager != null && _mediaManager.TotalSessions <= 1 && _settings.Layout == LayoutStyle.Standard)
             {
-                nonTextWidth += 22 + 16;
+                nonTextWidth += (MetadataPanelLeftMarginNoArt + MetadataPanelRightMargin) + SafetyPadding;
             }
             else
             {
-                nonTextWidth += 12 + 16;
+                nonTextWidth += (MetadataPanelLeftMargin + MetadataPanelRightMargin) + SafetyPadding;
             }
 
             return nonTextWidth;
         }
-
-
 
         private double GetSmartResizeMaxWidth()
         {
@@ -833,10 +719,10 @@ namespace TaskbarMiniPlayer
             double width;
             if (_settings.Layout == LayoutStyle.Compact)
             {
-                width = (_settings.ButtonSize * 3) + 30;
+                width = (_settings.ButtonSize * 3) + CompactSidePadding;
                 if (_mediaManager != null && _mediaManager.TotalSessions > 1)
                 {
-                    width += 18;
+                    width += SessionIndicatorTotalWidth;
                 }
             }
             else if (_settings.EnableDynamicSizing)
@@ -847,16 +733,16 @@ namespace TaskbarMiniPlayer
                 double maxTextW = 0;
                 if (_settings.HideArtist || _settings.DynamicSizingTarget == SizingTarget.TitleOnly)
                 {
-                    maxTextW = GetTextWidth(TxtTitle, titleText);
+                    maxTextW = _marqueeController?.GetTextWidth(TxtTitle, titleText) ?? 120;
                 }
                 else if (_settings.DynamicSizingTarget == SizingTarget.ArtistOnly)
                 {
-                    maxTextW = GetTextWidth(TxtArtist, artistText);
+                    maxTextW = _marqueeController?.GetTextWidth(TxtArtist, artistText) ?? 120;
                 }
                 else // Both
                 {
-                    double titleW = GetTextWidth(TxtTitle, titleText);
-                    double artistW = GetTextWidth(TxtArtist, artistText);
+                    double titleW = _marqueeController?.GetTextWidth(TxtTitle, titleText) ?? 120;
+                    double artistW = _marqueeController?.GetTextWidth(TxtArtist, artistText) ?? 120;
                     maxTextW = Math.Max(titleW, artistW);
                 }
 
@@ -882,7 +768,7 @@ namespace TaskbarMiniPlayer
 
                 if (_mediaManager != null && _mediaManager.TotalSessions > 1)
                 {
-                    baseWidth += 18;
+                    baseWidth += SessionIndicatorTotalWidth;
                 }
                 width = baseWidth;
             }
@@ -899,8 +785,6 @@ namespace TaskbarMiniPlayer
             return width;
         }
 
-        private bool _isAnimatingWidth = false;
-
         private void AnimateToWidth(double targetWidth, Action? onComplete = null)
         {
             double currentW = MainBorder.Width;
@@ -912,7 +796,7 @@ namespace TaskbarMiniPlayer
                 MainBorder.BeginAnimation(WidthProperty, null);
                 MainBorder.Width = targetWidth;
                 _isAnimatingWidth = false;
-                UpdateMarquee();
+                _marqueeController?.Update(_settings, _mediaManager, _isAnimatingWidth);
                 onComplete?.Invoke();
                 return;
             }
@@ -930,12 +814,14 @@ namespace TaskbarMiniPlayer
                 _isAnimatingWidth = false;
                 MainBorder.BeginAnimation(WidthProperty, null);
                 MainBorder.Width = targetWidth;
-                UpdateMarquee();
+                _marqueeController?.Update(_settings, _mediaManager, _isAnimatingWidth);
                 onComplete?.Invoke();
             };
 
             MainBorder.BeginAnimation(WidthProperty, widthAnim);
         }
+
+        // ══════ Positioning ══════
 
         protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
         {
@@ -943,7 +829,7 @@ namespace TaskbarMiniPlayer
             if (IsLoaded)
             {
                 Reposition();
-                RepositionVolumePopup();
+                _volumeController?.RepositionPopup();
             }
         }
 
@@ -965,13 +851,13 @@ namespace TaskbarMiniPlayer
                     helper.Owner = taskbar;
                 }
             }
-            catch 
+            catch
             {
                 try
                 {
                     Win32.SetWindowLongPtr(hwnd, Win32.GWL_HWNDPARENT, taskbar);
                 }
-                catch { }
+                catch (Exception ex) { Log.Warn($"[MainWindow] Failed to reparent to taskbar: {ex.Message}"); }
             }
 
             if (_settings.EnableSmartResize && IsLoaded)
@@ -1019,92 +905,6 @@ namespace TaskbarMiniPlayer
             Win32.SetWindowPos(hwnd, Win32.HWND_TOPMOST, xPos, yPos, myW, myH, Win32.SWP_NOACTIVATE | Win32.SWP_SHOWWINDOW);
         }
 
-        private void RepositionVolumePopup()
-        {
-            if (VolumePopup != null && VolumePopup.IsOpen)
-            {
-                var offset = VolumePopup.HorizontalOffset;
-                VolumePopup.HorizontalOffset = offset + 0.01;
-                VolumePopup.HorizontalOffset = offset;
-            }
-        }
-
-        private async void BtnPrev_Click(object sender, RoutedEventArgs e) => await _mediaManager.SkipPreviousAsync();
-        private async void BtnPlay_Click(object sender, RoutedEventArgs e) => await _mediaManager.PlayPauseAsync();
-        private async void BtnNext_Click(object sender, RoutedEventArgs e) => await _mediaManager.SkipNextAsync();
-
-        private void AudioEndpointVolume_OnVolumeNotification(AudioVolumeNotificationData data)
-        {
-            if (!_isDraggingVolume)
-            {
-                Dispatcher.InvokeAsync(() => UpdateVolumeUI(data.MasterVolume));
-            }
-        }
-        
-        private void UpdateVolumeUI(float volumeLevel)
-        {
-            VolumeFill.Width = VolumeTrack.ActualWidth * volumeLevel;
-            if (VolumeFill.Width > 16)
-                VolumeFill.CornerRadius = new CornerRadius(16, volumeLevel >= 0.98f ? 16 : 0, volumeLevel >= 0.98f ? 16 : 0, 16);
-            else
-                VolumeFill.CornerRadius = new CornerRadius(16, 0, 0, 16);
-
-            if (volumeLevel == 0)
-                VolumeIcon.Text = "\uE74F";
-            else if (volumeLevel <= 0.33f)
-                VolumeIcon.Text = "\uE992";
-            else if (volumeLevel <= 0.66f)
-                VolumeIcon.Text = "\uE993";
-            else
-                VolumeIcon.Text = "\uE994";
-        }
-
-        private void MainBorder_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
-        {
-            if (_settings.EnableVolumeSlider)
-            {
-                OpenVolumePopup();
-            }
-            if (_settings.ScrollBehavior == "Hover")
-            {
-                UpdateMarquee();
-            }
-        }
-
-        private async void MainBorder_MouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
-        {
-            await System.Threading.Tasks.Task.Delay(50);
-            if (!MainBorder.IsMouseOver && !VolumePopupGrid.IsMouseOver)
-            {
-                CloseVolumePopup();
-            }
-            if (_settings.ScrollBehavior == "Hover")
-            {
-                UpdateMarquee();
-            }
-        }
-
-        private void VolumePopup_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
-        {
-            if (_settings.ScrollBehavior == "Hover")
-            {
-                UpdateMarquee();
-            }
-        }
-
-        private async void VolumePopup_MouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
-        {
-            await System.Threading.Tasks.Task.Delay(50);
-            if (!MainBorder.IsMouseOver && !VolumePopupGrid.IsMouseOver)
-            {
-                CloseVolumePopup();
-            }
-            if (_settings.ScrollBehavior == "Hover")
-            {
-                UpdateMarquee();
-            }
-        }
-
         private bool IsTaskbarAtTop()
         {
             var taskbar = Win32.FindWindow("Shell_TrayWnd", null);
@@ -1118,54 +918,57 @@ namespace TaskbarMiniPlayer
             return false;
         }
 
-        private void OpenVolumePopup()
+        // ══════ Button Click Handlers ══════
+
+        private async void BtnPrev_Click(object sender, RoutedEventArgs e) => await _mediaManager.SkipPreviousAsync();
+        private async void BtnPlay_Click(object sender, RoutedEventArgs e) => await _mediaManager.PlayPauseAsync();
+        private async void BtnNext_Click(object sender, RoutedEventArgs e) => await _mediaManager.SkipNextAsync();
+
+        // ══════ Mouse Interaction ══════
+
+        private void MainBorder_MouseEnter(object sender, MouseEventArgs e)
         {
-            if (VolumePopup.IsOpen) return;
-            if (VolumeTrack.ActualWidth > 0 && _audioDevice != null)
+            if (_settings.EnableVolumeSlider)
             {
-                UpdateVolumeUI(_audioDevice.AudioEndpointVolume.MasterVolumeLevelScalar);
+                _volumeController?.Open(_settings.DisableVisualizer);
             }
-
-            bool isTop = IsTaskbarAtTop();
-            VolumePopup.Placement = isTop ? System.Windows.Controls.Primitives.PlacementMode.Bottom : System.Windows.Controls.Primitives.PlacementMode.Top;
-            VolumePopup.VerticalOffset = isTop ? 8 : -8;
-
-            VolumePopup.IsOpen = true;
-            VolumePopupGrid.IsHitTestVisible = true;
-
-            var fadeDur = TimeSpan.FromMilliseconds(200);
-            var springDur = TimeSpan.FromMilliseconds(400);
-
-            var fadeIn = new DoubleAnimation(0, 1, fadeDur);
-            double startY = isTop ? -20 : 20;
-            var slide = new DoubleAnimation(startY, 0, springDur) { EasingFunction = new Animations.AppleSpringEase(0.8, 0.4) };
-
-            VolumePopupGrid.BeginAnimation(OpacityProperty, fadeIn);
-            VolumePopupTranslate.BeginAnimation(TranslateTransform.YProperty, slide);
-
-            if (!_settings.DisableVisualizer)
+            if (_settings.ScrollBehavior == "Hover")
             {
-                _peakMeterTimer?.Start();
+                _marqueeController?.Update(_settings, _mediaManager, _isAnimatingWidth);
             }
         }
 
-        private void CloseVolumePopup()
+        private async void MainBorder_MouseLeave(object sender, MouseEventArgs e)
         {
-            if (!VolumePopup.IsOpen) return;
-            VolumePopupGrid.IsHitTestVisible = false;
-            
-            var fadeOut = new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(150));
-            fadeOut.Completed += (s, ev) => { VolumePopup.IsOpen = false; };
-            VolumePopupGrid.BeginAnimation(OpacityProperty, fadeOut);
-
-            _isDraggingVolume = false;
-            VolumeTrack.ReleaseMouseCapture();
-
-            _peakMeterTimer?.Stop();
-            if (VolumeIconScale != null)
+            await System.Threading.Tasks.Task.Delay(50);
+            if (!MainBorder.IsMouseOver && !VolumePopupGrid.IsMouseOver)
             {
-                VolumeIconScale.ScaleX = 1.0;
-                VolumeIconScale.ScaleY = 1.0;
+                _volumeController?.Close();
+            }
+            if (_settings.ScrollBehavior == "Hover")
+            {
+                _marqueeController?.Update(_settings, _mediaManager, _isAnimatingWidth);
+            }
+        }
+
+        private void VolumePopup_MouseEnter(object sender, MouseEventArgs e)
+        {
+            if (_settings.ScrollBehavior == "Hover")
+            {
+                _marqueeController?.Update(_settings, _mediaManager, _isAnimatingWidth);
+            }
+        }
+
+        private async void VolumePopup_MouseLeave(object sender, MouseEventArgs e)
+        {
+            await System.Threading.Tasks.Task.Delay(50);
+            if (!MainBorder.IsMouseOver && !VolumePopupGrid.IsMouseOver)
+            {
+                _volumeController?.Close();
+            }
+            if (_settings.ScrollBehavior == "Hover")
+            {
+                _marqueeController?.Update(_settings, _mediaManager, _isAnimatingWidth);
             }
         }
 
@@ -1184,6 +987,33 @@ namespace TaskbarMiniPlayer
                 ShowSettings();
             }
         }
+
+        private void MainBorder_MouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            if (e.Delta > 0)
+                _mediaManager.SwitchSession(-1);
+            else if (e.Delta < 0)
+                _mediaManager.SwitchSession(1);
+        }
+
+        private void PanelMetadata_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            Dispatcher.BeginInvoke(DispatcherPriority.Loaded, () =>
+                _marqueeController?.Update(_settings, _mediaManager, _isAnimatingWidth));
+        }
+
+        // ══════ Volume Track Events (delegated to VolumeController) ══════
+
+        private void VolumeTrack_MouseDown(object sender, MouseButtonEventArgs e)
+            => _volumeController?.OnTrackMouseDown(e);
+
+        private void VolumeTrack_MouseMove(object sender, MouseEventArgs e)
+            => _volumeController?.OnTrackMouseMove(e);
+
+        private void VolumeTrack_MouseUp(object sender, MouseButtonEventArgs e)
+            => _volumeController?.OnTrackMouseUp(e);
+
+        // ══════ Settings & Layout ══════
 
         private void ShowSettings()
         {
@@ -1212,7 +1042,7 @@ namespace TaskbarMiniPlayer
                 _settings.Layout = LayoutStyle.Expanded;
             else
                 _settings.Layout = LayoutStyle.Compact;
-                
+
             _settings.Save();
             ApplySettings(true);
         }
@@ -1234,297 +1064,5 @@ namespace TaskbarMiniPlayer
             var tw = new TranslucentIcoWindow(rect, this);
             tw.Show();
         }
-
-        private void MainBorder_MouseWheel(object sender, MouseWheelEventArgs e)
-        {
-            if (e.Delta > 0)
-                _mediaManager.SwitchSession(-1);
-            else if (e.Delta < 0)
-                _mediaManager.SwitchSession(1);
-        }
-
-        private void PanelMetadata_SizeChanged(object sender, SizeChangedEventArgs e)
-        {
-            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, () => UpdateMarquee());
-        }
-
-        private void VolumeTrack_MouseDown(object sender, MouseButtonEventArgs e)
-        {
-            if (e.LeftButton == MouseButtonState.Pressed)
-            {
-                _isDraggingVolume = true;
-                VolumeTrack.CaptureMouse();
-                UpdateVolumeFromMouse(e);
-            }
-        }
-
-        private void VolumeTrack_MouseMove(object sender, System.Windows.Input.MouseEventArgs e)
-        {
-            if (_isDraggingVolume && e.LeftButton == MouseButtonState.Pressed)
-            {
-                UpdateVolumeFromMouse(e);
-            }
-        }
-
-        private void VolumeTrack_MouseUp(object sender, MouseButtonEventArgs e)
-        {
-            if (_isDraggingVolume)
-            {
-                _isDraggingVolume = false;
-                VolumeTrack.ReleaseMouseCapture();
-                UpdateVolumeFromMouse(e);
-                SpringBackVolumeBorder();
-            }
-        }
-
-        private void UpdateVolumeFromMouse(System.Windows.Input.MouseEventArgs e)
-        {
-            if (_audioDevice == null) return;
- 
-            var pos = e.GetPosition(VolumeTrack);
-            double width = VolumeTrack.ActualWidth;
-            if (width <= 0) return;
- 
-            double ratio = pos.X / width;
-            double stretchX = 1.0;
-            double squeezeY = 1.0;
-
-            if (ratio > 1.0)
-            {
-                double overDrag = pos.X - width;
-                overDrag = Math.Min(overDrag, 150.0);
-                stretchX = 1.0 + (overDrag / width) * 0.4;
-                squeezeY = 1.0 - (stretchX - 1.0) * 0.5;
-                VolumeBorder.RenderTransformOrigin = new System.Windows.Point(0.0, 0.5);
-            }
-            else if (ratio < 0.0)
-            {
-                double overDrag = -pos.X;
-                overDrag = Math.Min(overDrag, 150.0);
-                stretchX = 1.0 + (overDrag / width) * 0.4;
-                squeezeY = 1.0 - (stretchX - 1.0) * 0.5;
-                VolumeBorder.RenderTransformOrigin = new System.Windows.Point(1.0, 0.5);
-            }
-            else
-            {
-                VolumeBorder.RenderTransformOrigin = new System.Windows.Point(0.5, 0.5);
-            }
-
-            VolumeBorderScale.BeginAnimation(ScaleTransform.ScaleXProperty, null);
-            VolumeBorderScale.BeginAnimation(ScaleTransform.ScaleYProperty, null);
-            VolumeBorderScale.ScaleX = stretchX;
-            VolumeBorderScale.ScaleY = squeezeY;
-
-            double clampedRatio = Math.Max(0.0, Math.Min(1.0, ratio));
-            float volume = (float)clampedRatio;
-            UpdateVolumeUI(volume);
- 
-            try
-            {
-                _audioDevice.AudioEndpointVolume.MasterVolumeLevelScalar = volume;
-            }
-            catch { }
-        }
-
-        private void SpringBackVolumeBorder()
-        {
-            var springDur = TimeSpan.FromMilliseconds(500);
-            var springEase = new Animations.AppleSpringEase(0.5, 0.3);
-
-            var scaleXAnim = new DoubleAnimation(VolumeBorderScale.ScaleX, 1.0, springDur) { EasingFunction = springEase };
-            var scaleYAnim = new DoubleAnimation(VolumeBorderScale.ScaleY, 1.0, springDur) { EasingFunction = springEase };
-
-            VolumeBorderScale.BeginAnimation(ScaleTransform.ScaleXProperty, scaleXAnim);
-            VolumeBorderScale.BeginAnimation(ScaleTransform.ScaleYProperty, scaleYAnim);
-        }
-
-        private void PeakMeterTimer_Tick(object? sender, EventArgs e)
-        {
-            if (_settings.DisableVisualizer || _audioDevice == null || !VolumePopup.IsOpen) return;
-            try
-            {
-                float peak = _audioDevice.AudioMeterInformation.MasterPeakValue;
-                double targetScale = 1.0 + peak * 0.25;
-                double currentScale = VolumeIconScale.ScaleX;
-                double newScale = currentScale + (targetScale - currentScale) * 0.4;
-                
-                VolumeIconScale.ScaleX = newScale;
-                VolumeIconScale.ScaleY = newScale;
-            }
-            catch { }
-        }
-
-
-
-        private void TimelineTimer_Tick(object? sender, EventArgs e)
-        {
-            UpdateTimelineBorder();
-        }
-
-        private void UpdateTimelineBorder(bool animate = true)
-        {
-            if (_settings.BorderMode != BorderMode.Timeline || !IsLoaded)
-            {
-                TimelineBorder.Visibility = Visibility.Collapsed;
-                TimelineBorder2.Visibility = Visibility.Collapsed;
-                return;
-            }
-
-            if (_settings.TimelineStyle == TimelineStyle.BothSides)
-            {
-                TimelineBorder.Visibility = Visibility.Visible;
-                TimelineBorder2.Visibility = Visibility.Visible;
-            }
-            else
-            {
-                TimelineBorder.Visibility = Visibility.Visible;
-                TimelineBorder2.Visibility = Visibility.Collapsed;
-            }
-
-            double w = MainBorder.Width;
-            if (double.IsNaN(w) || w <= 0) w = MainBorder.ActualWidth;
-            double h = MainBorder.Height;
-            if (double.IsNaN(h) || h <= 0) h = MainBorder.ActualHeight;
-
-            if (w <= 0 || h <= 0) return;
-
-            double r = 16; // RadiusX/RadiusY
-            double perimeter = 2 * (w - 2 * r) + 2 * (h - 2 * r) + 2 * Math.PI * r;
-
-            if (TimelineBorder.StrokeDashArray == null || TimelineBorder.StrokeDashArray.Count == 0 || Math.Abs(TimelineBorder.StrokeDashArray[0] - perimeter) > 1.0)
-            {
-                TimelineBorder.StrokeDashArray = new DoubleCollection(new double[] { perimeter });
-            }
-            if (_settings.TimelineStyle == TimelineStyle.BothSides)
-            {
-                if (TimelineBorder2.StrokeDashArray == null || TimelineBorder2.StrokeDashArray.Count == 0 || Math.Abs(TimelineBorder2.StrokeDashArray[0] - perimeter) > 1.0)
-                {
-                    TimelineBorder2.StrokeDashArray = new DoubleCollection(new double[] { perimeter });
-                }
-            }
-
-            var timeline = _mediaManager.GetTimelineProperties();
-            if (timeline == null || timeline.EndTime.TotalMilliseconds <= 0)
-            {
-                TimelineBorder.BeginAnimation(System.Windows.Shapes.Shape.StrokeDashOffsetProperty, null);
-                TimelineBorder.StrokeDashOffset = _settings.TimelineStyle == TimelineStyle.Flipped ? -perimeter : perimeter;
-                if (_settings.TimelineStyle == TimelineStyle.BothSides)
-                {
-                    TimelineBorder2.BeginAnimation(System.Windows.Shapes.Shape.StrokeDashOffsetProperty, null);
-                    TimelineBorder2.StrokeDashOffset = -perimeter;
-                }
-                return;
-            }
-
-            double durationMs = timeline.EndTime.TotalMilliseconds;
-            double positionMs = timeline.Position.TotalMilliseconds;
-
-            if (_mediaManager.IsPlaying)
-            {
-                var timeSinceUpdate = DateTimeOffset.UtcNow - timeline.LastUpdatedTime;
-                if (timeSinceUpdate.TotalMilliseconds < 0) timeSinceUpdate = TimeSpan.Zero;
-                positionMs += timeSinceUpdate.TotalMilliseconds;
-            }
-
-            if (positionMs > durationMs) positionMs = durationMs;
-            if (positionMs < 0) positionMs = 0;
-
-            double progress = positionMs / durationMs;
-
-            double targetOffset1;
-            double targetOffset2 = 0;
-            double endOffset1;
-            double endOffset2 = 0;
-
-            if (_settings.TimelineStyle == TimelineStyle.Flipped)
-            {
-                targetOffset1 = -perimeter * (1.0 - progress);
-                endOffset1 = 0;
-            }
-            else if (_settings.TimelineStyle == TimelineStyle.BothSides)
-            {
-                targetOffset1 = perimeter * (1.0 - 0.5 * progress);
-                targetOffset2 = -perimeter * (1.0 - 0.5 * progress);
-                endOffset1 = 0.5 * perimeter;
-                endOffset2 = -0.5 * perimeter;
-            }
-            else // Default
-            {
-                targetOffset1 = perimeter * (1.0 - progress);
-                endOffset1 = 0;
-            }
-
-            if (!animate || _settings.DisableTimelineAnimation)
-            {
-                TimelineBorder.BeginAnimation(System.Windows.Shapes.Shape.StrokeDashOffsetProperty, null);
-                TimelineBorder.StrokeDashOffset = targetOffset1;
-                if (_settings.TimelineStyle == TimelineStyle.BothSides)
-                {
-                    TimelineBorder2.BeginAnimation(System.Windows.Shapes.Shape.StrokeDashOffsetProperty, null);
-                    TimelineBorder2.StrokeDashOffset = targetOffset2;
-                }
-            }
-            else
-            {
-                if (!_mediaManager.IsPlaying)
-                {
-                    TimelineBorder.BeginAnimation(System.Windows.Shapes.Shape.StrokeDashOffsetProperty, null);
-                    TimelineBorder.StrokeDashOffset = targetOffset1;
-                    if (_settings.TimelineStyle == TimelineStyle.BothSides)
-                    {
-                        TimelineBorder2.BeginAnimation(System.Windows.Shapes.Shape.StrokeDashOffsetProperty, null);
-                        TimelineBorder2.StrokeDashOffset = targetOffset2;
-                    }
-                }
-                else
-                {
-                    // Animate TimelineBorder
-                    double currentOffset1 = TimelineBorder.StrokeDashOffset;
-                    if (double.IsNaN(currentOffset1) || currentOffset1 == 0 || Math.Abs(currentOffset1 - targetOffset1) > perimeter * 0.1)
-                    {
-                        TimelineBorder.BeginAnimation(System.Windows.Shapes.Shape.StrokeDashOffsetProperty, null);
-                        TimelineBorder.StrokeDashOffset = targetOffset1;
-                        currentOffset1 = targetOffset1;
-                    }
-
-                    double remainingMs = durationMs - positionMs;
-                    if (remainingMs > 50)
-                    {
-                        var anim1 = new DoubleAnimation(currentOffset1, endOffset1, TimeSpan.FromMilliseconds(remainingMs));
-                        TimelineBorder.BeginAnimation(System.Windows.Shapes.Shape.StrokeDashOffsetProperty, anim1);
-                    }
-                    else
-                    {
-                        TimelineBorder.BeginAnimation(System.Windows.Shapes.Shape.StrokeDashOffsetProperty, null);
-                        TimelineBorder.StrokeDashOffset = endOffset1;
-                    }
-
-                    // Animate TimelineBorder2 if BothSides
-                    if (_settings.TimelineStyle == TimelineStyle.BothSides)
-                    {
-                        double currentOffset2 = TimelineBorder2.StrokeDashOffset;
-                        if (double.IsNaN(currentOffset2) || currentOffset2 == 0 || Math.Abs(currentOffset2 - targetOffset2) > perimeter * 0.1)
-                        {
-                            TimelineBorder2.BeginAnimation(System.Windows.Shapes.Shape.StrokeDashOffsetProperty, null);
-                            TimelineBorder2.StrokeDashOffset = targetOffset2;
-                            currentOffset2 = targetOffset2;
-                        }
-
-                        if (remainingMs > 50)
-                        {
-                            var anim2 = new DoubleAnimation(currentOffset2, endOffset2, TimeSpan.FromMilliseconds(remainingMs));
-                            TimelineBorder2.BeginAnimation(System.Windows.Shapes.Shape.StrokeDashOffsetProperty, anim2);
-                        }
-                        else
-                        {
-                            TimelineBorder2.BeginAnimation(System.Windows.Shapes.Shape.StrokeDashOffsetProperty, null);
-                            TimelineBorder2.StrokeDashOffset = endOffset2;
-                        }
-                    }
-                }
-            }
-        }
-
-
     }
 }

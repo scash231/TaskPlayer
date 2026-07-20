@@ -44,7 +44,7 @@ namespace TaskbarMiniPlayer
                 {
                     dpiScale = VisualTreeHelper.GetDpi(System.Windows.Application.Current.MainWindow).PixelsPerDip;
                 }
-                catch { }
+                catch (Exception ex) { Log.Warn($"[SettingsWindow] Failed to get DPI scale: {ex.Message}"); }
             }
             double physY = (originRect.Top + originRect.Height / 2) * dpiScale;
             var screen = System.Windows.Forms.Screen.FromPoint(new System.Drawing.Point((int)((originRect.Left + originRect.Width / 2) * dpiScale), (int)physY));
@@ -818,7 +818,7 @@ namespace TaskbarMiniPlayer
                 var color = (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(colorHex);
                 Resources["Accent"] = new SolidColorBrush(color);
             }
-            catch { }
+            catch (Exception ex) { Log.Warn($"[SettingsWindow] Failed to convert accent color '{colorHex}': {ex.Message}"); }
         }
 
         private void TxtSettingsTitle_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -850,7 +850,7 @@ namespace TaskbarMiniPlayer
             {
                 dpiScale = System.Windows.Media.VisualTreeHelper.GetDpi(this).PixelsPerDip;
             }
-            catch { }
+            catch (Exception ex) { Log.Warn($"[SettingsWindow] Failed to get DPI scale: {ex.Message}"); }
 
             double logicalLeft = buttonPos.X / dpiScale;
             double logicalTop = buttonPos.Y / dpiScale;

@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text.Json;
 
 namespace TaskbarMiniPlayer
@@ -15,6 +14,9 @@ namespace TaskbarMiniPlayer
 
     public class Settings
     {
+        // ── Schema version for migration support ──
+        public int SettingsVersion { get; set; } = 2;
+
         public bool ShowPlayer { get; set; } = true;
         public int ButtonSize { get; set; } = 28;
         public int ButtonGap { get; set; } = 2;
@@ -60,7 +62,7 @@ namespace TaskbarMiniPlayer
 
         public bool OptimizeTimerFrequencies { get; set; } = false;
         public int TopmostIntervalMs { get; set; } = 500;
-        public bool DisableTopmostTimer { get; set; } = false;
+        public bool DisableTopmostTimer { get; set; } = true;
         public int PeakMeterIntervalMs { get; set; } = 30;
 
         public LayoutStyle Layout { get; set; } = LayoutStyle.Expanded;
@@ -77,6 +79,9 @@ namespace TaskbarMiniPlayer
         public bool ExpertMode { get; set; } = false;
         public string? ActiveProfileName { get; set; }
         public bool DevMode { get; set; } = false;
+
+        // ── Profile manager (shared logic via ProfileManager<T>) ──
+        private static readonly ProfileManager<Settings> _profiles = new(GetProfilesDir());
 
         private static string GetSettingsPath()
         {
@@ -105,16 +110,38 @@ namespace TaskbarMiniPlayer
                 {
                     var json = File.ReadAllText(path);
                     var settings = JsonSerializer.Deserialize<Settings>(json) ?? new Settings();
-                    if (settings.HideBorder && settings.BorderMode == BorderMode.Static)
-                    {
-                        settings.BorderMode = BorderMode.None;
-                        settings.HideBorder = false;
-                    }
+                    RunMigrations(settings);
                     return settings;
                 }
             }
-            catch { }
+            catch (Exception ex) { Log.Error("[Settings] Failed to load settings", ex); }
             return new Settings();
+        }
+
+        /// <summary>
+        /// Runs version-gated migrations. Each migration bumps the version so it only runs once.
+        /// </summary>
+        private static void RunMigrations(Settings settings)
+        {
+            bool changed = false;
+
+            // v1 → v2: Migrate HideBorder boolean to BorderMode enum
+            if (settings.SettingsVersion < 2)
+            {
+                if (settings.HideBorder && settings.BorderMode == BorderMode.Static)
+                {
+                    settings.BorderMode = BorderMode.None;
+                    settings.HideBorder = false;
+                }
+                settings.SettingsVersion = 2;
+                changed = true;
+            }
+
+            if (changed)
+            {
+                settings.Save();
+                Log.Info("[Settings] Migrated settings to version " + settings.SettingsVersion);
+            }
         }
 
         public void Save()
@@ -125,84 +152,16 @@ namespace TaskbarMiniPlayer
                 File.WriteAllText(GetSettingsPath(), json);
                 ApplyStartup();
             }
-            catch { }
+            catch (Exception ex) { Log.Error("[Settings] Failed to save settings", ex); }
         }
 
-        // ── Profile Management ──
+        // ── Profile Management (delegated to ProfileManager<T>) ──
 
-        public void SaveAsProfile(string name)
-        {
-            try
-            {
-                var path = Path.Combine(GetProfilesDir(), SanitizeFileName(name) + ".json");
-                var json = JsonSerializer.Serialize(this, _jsonOptions);
-                File.WriteAllText(path, json);
-            }
-            catch { }
-        }
-
-        public static Settings? LoadProfile(string name)
-        {
-            try
-            {
-                var path = Path.Combine(GetProfilesDir(), SanitizeFileName(name) + ".json");
-                if (File.Exists(path))
-                {
-                    var json = File.ReadAllText(path);
-                    return JsonSerializer.Deserialize<Settings>(json);
-                }
-            }
-            catch { }
-            return null;
-        }
-
-        public static List<string> GetProfileNames()
-        {
-            try
-            {
-                var dir = GetProfilesDir();
-                return Directory.GetFiles(dir, "*.json")
-                    .Select(f => Path.GetFileNameWithoutExtension(f))
-                    .OrderBy(n => n, StringComparer.OrdinalIgnoreCase)
-                    .ToList();
-            }
-            catch { }
-            return new List<string>();
-        }
-
-        public static bool DeleteProfile(string name)
-        {
-            try
-            {
-                var path = Path.Combine(GetProfilesDir(), SanitizeFileName(name) + ".json");
-                if (File.Exists(path)) { File.Delete(path); return true; }
-            }
-            catch { }
-            return false;
-        }
-
-        public static bool RenameProfile(string oldName, string newName)
-        {
-            try
-            {
-                var dir = GetProfilesDir();
-                var oldPath = Path.Combine(dir, SanitizeFileName(oldName) + ".json");
-                var newPath = Path.Combine(dir, SanitizeFileName(newName) + ".json");
-                if (File.Exists(oldPath) && !File.Exists(newPath))
-                {
-                    File.Move(oldPath, newPath);
-                    return true;
-                }
-            }
-            catch { }
-            return false;
-        }
-
-        private static string SanitizeFileName(string name)
-        {
-            var invalid = Path.GetInvalidFileNameChars();
-            return string.Concat(name.Select(c => invalid.Contains(c) ? '_' : c));
-        }
+        public void SaveAsProfile(string name) => _profiles.SaveAsProfile(this, name);
+        public static Settings? LoadProfile(string name) => _profiles.LoadProfile(name);
+        public static List<string> GetProfileNames() => _profiles.GetProfileNames();
+        public static bool DeleteProfile(string name) => _profiles.DeleteProfile(name);
+        public static bool RenameProfile(string oldName, string newName) => _profiles.RenameProfile(oldName, newName);
 
         public void ApplyStartup()
         {
@@ -217,7 +176,7 @@ namespace TaskbarMiniPlayer
                         key.DeleteValue("TaskbarMiniPlayer", false);
                 }
             }
-            catch { }
+            catch (Exception ex) { Log.Error("[Settings] Failed to apply startup registry", ex); }
         }
     }
 }
